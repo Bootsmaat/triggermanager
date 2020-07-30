@@ -1,15 +1,30 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from triggers import *
 
-def add_list_item (trigger):
-    lst_item    = tk.Frame (frame_trigger_list)
-    lbl_id      = tk.Label (lst_item, text=str (trigger.id))
-    lbl_name    = tk.Label (lst_item, text=str (trigger.name))
+def open_file ():
+    path = filedialog.askopenfilename (
+        filetypes=[
+            ("all files", "*.*"),
+            ("Mp3 Files", "*.mp3"),
+            ("WAV files", "*.wav")
+            ]
+    )
 
-    lst_item.pack   (fill=tk.X, expand=1, anchor=tk.NW)
-    lbl_id.pack     (side=tk.LEFT)
-    lbl_name.pack   (side=tk.LEFT)
+    print (path)
+
+def add_list_item (trigger):
+    lst_item        = tk.Frame  (frame_trigger_list)
+    lbl_id          = tk.Label  (lst_item, text=str (trigger.id))
+    lbl_name        = tk.Entry  (lst_item)
+    btn_filepath    = tk.Button (lst_item, text="select file", command=open_file)
+
+    lbl_name.insert (0, trigger.name)
+
+    lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
+    lbl_id.pack         (side=tk.LEFT)
+    lbl_name.pack       (side=tk.LEFT)
+    btn_filepath.pack   (side=tk.LEFT)
 
 def add_item ():
     add_trigger ()
