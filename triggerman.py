@@ -4,6 +4,7 @@ from triggers import *
 
 root = tk.Tk ()
 root.title ("triggerman")
+root.geometry ("650x600")
 
 # globals
 selected_item = IntVar()
@@ -73,8 +74,8 @@ btn_copy        = tk.Button (root, text="copy")
 container.pack  (fill=tk.BOTH, expand=1, anchor=tk.N)
 canvas.pack     (side=tk.LEFT, fill=tk.BOTH, expand=1)
 scrollbar.pack  (side=tk.RIGHT, fill=tk.Y)
-btn_add.pack    (anchor=tk.NW, side=tk.LEFT, fill=tk.X)
-btn_remove.pack (anchor=tk.NW, side=tk.LEFT, fill=tk.X)
-btn_copy.pack   (anchor=tk.NW, side=tk.LEFT, fill=tk.X)
+btn_add.pack    (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_remove.pack (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_copy.pack   (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 
 root.mainloop ()
