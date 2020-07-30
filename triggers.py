@@ -26,3 +26,6 @@ def add_trigger ():
     )
 
     trigger_list.append (trigger)
+
+def remove_trigger (i):
+    trigger_list.pop (i)

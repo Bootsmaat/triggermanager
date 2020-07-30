@@ -8,6 +8,7 @@ root.geometry ("650x600")
 
 # globals
 selected_item = IntVar()
+trigger_item_list = []
 
 def open_file ():
     path = filedialog.askopenfilename (
@@ -44,6 +45,12 @@ def add_list_item (trigger):
     btn_enabled.pack    (side=tk.LEFT)
     entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
+    trigger_item_list.append (lst_item)
+
+def remove_item ():
+    remove_trigger (selected_item.get ())
+    trigger_item_list[selected_item.get ()].pack_forget ()
+
 def add_item ():
     add_trigger ()
     add_list_item (trigger_list[-1])
@@ -66,7 +73,7 @@ canvas.create_window ((0,0), window=frame_trigger_list, anchor="nw")
 canvas.configure (yscrollcommand=scrollbar.set)
 
 btn_add         = tk.Button (root, text="add", command=add_item)
-btn_remove      = tk.Button (root, text="remove", bg="red")
+btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy        = tk.Button (root, text="copy")
 
 # packing
