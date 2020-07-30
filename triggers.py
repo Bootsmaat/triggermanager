@@ -13,10 +13,15 @@ trigger_t = namedtuple (
 
 # globals
 trigger_list = []
+id_counter   = 0
 
 # function definitions
 def add_trigger ():
-    _id = len (trigger_list)
+    global id_counter
+
+    _id         = id_counter
+    id_counter  = id_counter + 1
+
     trigger = trigger_t (
         id                  =  _id,
         name                = "trigger_%i" % _id,
@@ -27,5 +32,9 @@ def add_trigger ():
 
     trigger_list.append (trigger)
 
-def remove_trigger (i):
-    trigger_list.pop (i)
+def remove_trigger (id):
+    for tr in trigger_list:
+        if (tr.id == id):
+            trigger_list.remove (tr)
+            return
+        pass
