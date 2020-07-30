@@ -1,6 +1,12 @@
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, IntVar
 from triggers import *
+
+root = tk.Tk ()
+root.title ("triggerman")
+
+# globals
+selected_item = IntVar()
 
 def open_file ():
     path = filedialog.askopenfilename (
@@ -8,30 +14,38 @@ def open_file ():
             ("all files", "*.*"),
             ("Mp3 Files", "*.mp3"),
             ("WAV files", "*.wav")
-            ]
+        ]
     )
 
     print (path)
 
 def add_list_item (trigger):
-    lst_item        = tk.Frame  (frame_trigger_list)
-    lbl_id          = tk.Label  (lst_item, text=str (trigger.id))
-    lbl_name        = tk.Entry  (lst_item)
-    btn_filepath    = tk.Button (lst_item, text="select file", command=open_file)
+    global selected_item
 
-    lbl_name.insert (0, trigger.name)
+    lst_item        = tk.Frame          (frame_trigger_list)
+    btn_selected    = tk.Radiobutton    (lst_item, variable=selected_item, value=trigger.id)
+    lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
+    entry_name      = tk.Entry          (lst_item)
+    btn_filepath    = tk.Button         (lst_item, text="select file", command=open_file)
+    lbl_enabled     = tk.Label          (lst_item, text="enabled:")
+    btn_enabled     = tk.Checkbutton    (lst_item, variable=trigger.enabled)
+    entry_tframe    = tk.Entry          (lst_item)
+
+    entry_name.insert   (0, trigger.name)
+    entry_tframe.insert (0, str (trigger.activation_frame))
 
     lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
-    lbl_id.pack         (side=tk.LEFT)
-    lbl_name.pack       (side=tk.LEFT)
-    btn_filepath.pack   (side=tk.LEFT)
+    btn_selected.pack   (side=tk.LEFT, padx=2, pady=1)
+    lbl_id.pack         (side=tk.LEFT, padx=2, pady=1)
+    entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
+    btn_filepath.pack   (side=tk.LEFT, padx=2, pady=1)
+    lbl_enabled.pack    (side=tk.LEFT, padx=2, pady=1)
+    btn_enabled.pack    (side=tk.LEFT)
+    entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
 def add_item ():
     add_trigger ()
     add_list_item (trigger_list[-1])
-
-root = tk.Tk ()
-root.title ("triggerman")
 
 # Setup scroll frame
 
