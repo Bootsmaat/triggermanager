@@ -1,7 +1,7 @@
-import collections
+from collections import namedtuple
 
 # define list tuple
-trigger_t = collections.namedtuple (
+trigger_t = namedtuple (
     "trigger_t",
     [
         'id',
