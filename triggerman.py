@@ -10,8 +10,8 @@ root.geometry ("650x600")
 selected_item = IntVar()
 trigger_item_list = []
 
-def open_file ():
-    path = filedialog.askopenfilename (
+def open_file (id):
+    _path = filedialog.askopenfilename (
         filetypes=[
             ("all files", "*.*"),
             ("Mp3 Files", "*.mp3"),
@@ -19,22 +19,34 @@ def open_file ():
         ]
     )
 
-    print (path)
+    update_trigger (id, path=_path)
 
 def add_list_item (trigger):
     global selected_item
 
+    # root of item
     lst_item        = tk.Frame          (frame_trigger_list)
+
     btn_selected    = tk.Radiobutton    (lst_item, variable=selected_item, value=trigger.id)
     lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
     entry_name      = tk.Entry          (lst_item)
-    btn_filepath    = tk.Button         (lst_item, text="select file", command=open_file)
+    btn_filepath    = tk.Button         (lst_item, text="select file", 
+                                            command=lambda: open_file (trigger.id))
     lbl_enabled     = tk.Label          (lst_item, text="enabled:")
     btn_enabled     = tk.Checkbutton    (lst_item, variable=trigger.enabled)
     entry_tframe    = tk.Entry          (lst_item)
 
     entry_name.insert   (0, trigger.name)
+    entry_name.bind     (
+        "<Return>",
+        lambda a: update_trigger (id=trigger.id, name=entry_name.get ())
+        )
+
     entry_tframe.insert (0, str (trigger.activation_frame))
+    entry_tframe.bind   (
+        "<Return>",
+        lambda a: update_trigger (id=trigger.id, activation_frame=entry_tframe.get ())
+    )
 
     lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
     btn_selected.pack   (side=tk.LEFT, padx=2, pady=1)
