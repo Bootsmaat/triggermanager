@@ -36,7 +36,7 @@ def update_trigger_wrapper (_item, _id, **kwargs):
         _path = open_file ()
         if not (len (_path) == 0):
             kwargs['path'] = _path
-            _item['text'] = _path.split(path.sep)[-1]
+            _item['text'] = path.basename (_path)
 
     if 'activation_frame' in kwargs:
         try:
