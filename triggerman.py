@@ -111,10 +111,10 @@ def add_list_item (trigger):
     lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
     btn_selected.pack   (side=tk.LEFT, padx=1, pady=1)
     lbl_id.pack         (side=tk.LEFT, padx=1, pady=1)
-    entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
-    btn_filepath.pack   (side=tk.LEFT, padx=2, pady=1)
     lbl_enabled.pack    (side=tk.LEFT, padx=2, pady=1)
     btn_enabled.pack    (side=tk.LEFT)
+    entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
+    btn_filepath.pack   (side=tk.LEFT, padx=2, pady=1)
     entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
     trigger_item_list.append (lst_item)
