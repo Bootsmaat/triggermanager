@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, IntVar
+from tkinter import filedialog, IntVar
 from triggers import *
 from os import path
 
@@ -98,8 +98,8 @@ def add_list_item (trigger):
     )
 
     lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
-    btn_selected.pack   (side=tk.LEFT, padx=2, pady=1)
-    lbl_id.pack         (side=tk.LEFT, padx=2, pady=1)
+    btn_selected.pack   (side=tk.LEFT, padx=1, pady=1)
+    lbl_id.pack         (side=tk.LEFT, padx=1, pady=1)
     entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
     btn_filepath.pack   (side=tk.LEFT, padx=2, pady=1)
     lbl_enabled.pack    (side=tk.LEFT, padx=2, pady=1)
@@ -118,10 +118,10 @@ def add_item ():
 
 # Setup scroll frame
 
-container           = ttk.Frame (root)
+container           = tk.Frame (root)
 canvas              = tk.Canvas (container)
-scrollbar           = ttk.Scrollbar (container, orient="vertical", command=canvas.yview)
-frame_trigger_list  = ttk.Frame (canvas)
+scrollbar           = tk.Scrollbar (container, orient="vertical", command=canvas.yview)
+frame_trigger_list  = tk.Frame (canvas)
 
 frame_trigger_list.bind (
     "<Configure>",
