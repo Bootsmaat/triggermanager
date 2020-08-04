@@ -58,6 +58,9 @@ def update_trigger_wrapper (_item, _id, **kwargs):
 def add_list_item (trigger):
     global selected_item
 
+    enabled = IntVar ()
+    enabled.set (trigger.enabled)
+
     # root of item
     lst_item        = tk.Frame          (frame_trigger_list)
 
@@ -66,7 +69,7 @@ def add_list_item (trigger):
     entry_name      = tk.Entry          (lst_item)
     btn_filepath    = tk.Button         (
         lst_item,
-        text="select file",
+        text=trigger.path,
         command=lambda: update_trigger_wrapper (
             btn_filepath,
             trigger.id,
@@ -74,7 +77,15 @@ def add_list_item (trigger):
         )
     )
     lbl_enabled     = tk.Label          (lst_item, text="enabled:")
-    btn_enabled     = tk.Checkbutton    (lst_item, variable=trigger.enabled)
+    btn_enabled     = tk.Checkbutton    (
+        lst_item,
+        variable=enabled,
+        command=lambda: update_trigger_wrapper (
+            btn_enabled,
+            trigger.id,
+            enabled=enabled.get ()
+        )
+    )
     entry_tframe    = tk.Entry          (lst_item)
 
     entry_name.insert   (0, trigger.name)
