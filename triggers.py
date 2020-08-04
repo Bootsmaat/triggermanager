@@ -9,7 +9,8 @@ trigger_t = namedtuple (
         'path',
         'enabled',
         'activation_frame'
-    ])
+    ]
+)
 
 # globals
 trigger_list = []
