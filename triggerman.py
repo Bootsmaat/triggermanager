@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, IntVar
-from triggers import *
 from os import path
+from triggers import *
+import conman as cm
+import exman as em
 
 root = tk.Tk ()
 root.title ("triggerman")
@@ -13,6 +15,15 @@ FLASH_LENGTH = 200
 # globals
 selected_item = IntVar()
 trigger_item_list = []
+
+def send_config ():
+    enabled_triggers = []
+    for tr in trigger_list:
+        if tr.enabled:
+            enabled_triggers.append (tr)
+            cm.bind_id (tr.id, tr.activation_frame, lambda:em.dummy_func (tr.id))
+    
+    cm.send_trigger (enabled_triggers)
 
 def open_file ():
     _path = filedialog.askopenfilename (
@@ -147,14 +158,16 @@ canvas.configure (yscrollcommand=scrollbar.set)
 btn_add         = tk.Button (root, text="add", command=add_item)
 btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy        = tk.Button (root, text="copy")
+btn_send_cnf    = tk.Button (root, text="send to pi", command=send_config)
 
 # packing
 
-container.pack  (fill=tk.BOTH, expand=1, anchor=tk.N)
-canvas.pack     (side=tk.LEFT, fill=tk.BOTH, expand=1)
-scrollbar.pack  (side=tk.RIGHT, fill=tk.Y)
-btn_add.pack    (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_remove.pack (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_copy.pack   (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+container.pack      (fill=tk.BOTH, expand=1, anchor=tk.N)
+canvas.pack         (side=tk.LEFT, fill=tk.BOTH, expand=1)
+scrollbar.pack      (side=tk.RIGHT, fill=tk.Y)
+btn_add.pack        (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_remove.pack     (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_send_cnf.pack   (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 
 root.mainloop ()
