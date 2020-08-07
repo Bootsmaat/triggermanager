@@ -27,7 +27,7 @@ def add_trigger ():
         id                  =  _id,
         name                = "trigger_%i" % _id,
         path                = "No file set",
-        enabled             = 0,
+        enabled             = 1,
         activation_frame    = 0
     )
 

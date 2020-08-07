@@ -15,6 +15,22 @@ FLASH_LENGTH = 200
 # globals
 selected_item = IntVar()
 trigger_item_list = []
+trigger_loop_enabled = 0
+
+def toggle_trigger_loop ():
+    global trigger_loop_enabled
+
+    if trigger_loop_enabled:
+        print ('stopping thread')
+        trigger_loop_enabled = 0
+        cm.thr_stop ()
+    else:
+        print ('starting thread')
+        trigger_loop_enabled = 1
+        cm.thr_start ()
+
+def connect_wrapper ():
+    cm.connect ('PiTwo.local')
 
 def send_config ():
     enabled_triggers = []
@@ -23,6 +39,7 @@ def send_config ():
             enabled_triggers.append (tr)
             cm.bind_id (tr.id, tr.activation_frame, lambda:em.dummy_func (tr.id))
     
+    print ('sending list %s' % enabled_triggers)
     cm.send_trigger (enabled_triggers)
 
 def open_file ():
@@ -159,6 +176,8 @@ btn_add         = tk.Button (root, text="add", command=add_item)
 btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy        = tk.Button (root, text="copy")
 btn_send_cnf    = tk.Button (root, text="send to pi", command=send_config)
+btn_shooting    = tk.Button (root, text="shoot", command=toggle_trigger_loop)
+btn_connect     = tk.Button (root, text="connect", command=connect_wrapper)
 
 # packing
 
@@ -168,6 +187,8 @@ scrollbar.pack      (side=tk.RIGHT, fill=tk.Y)
 btn_add.pack        (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_remove.pack     (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_send_cnf.pack   (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_send_cnf.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+btn_connect.pack    (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 
 root.mainloop ()
