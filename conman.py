@@ -10,7 +10,7 @@ tr_sock.settimeout      (100)
 
 def trigger_loop ():
     global callbacks
-    global tr_sock
+    global conf_sock
 
     # sort list based on activation frame
     callbacks.sort (key=lambda t: t[1])
@@ -21,7 +21,7 @@ def trigger_loop ():
         id, a_fr, func = callbacks[i]
 
         if thr_looping:
-            data = tr_sock.recv (BUF_SIZE)
+            data = conf_sock.recv (BUF_SIZE)
             print ('executing t:%i on %i' % (id, a_fr))
             func    ()
             print   (data)
@@ -37,9 +37,8 @@ thr_looping = 0
 
 #function definitions
 def connect (addr):
-    global conf_sock, tr_sock
+    global conf_sock
     conf_sock.connect   ((addr, CONF_PORT))
-    tr_sock.connect     ((addr, TR_PORT))
     thr_loop.start ()
 
 def send_trigger (triggers):
