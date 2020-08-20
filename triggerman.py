@@ -18,16 +18,22 @@ trigger_item_list = []
 trigger_loop_enabled = 0
 
 def toggle_trigger_loop ():
-    global trigger_loop_enabled
+    global trigger_loop_enabled, cb_i
 
     if trigger_loop_enabled:
         print ('stopping thread')
         trigger_loop_enabled = 0
-        cm.thr_stop ()
+        cm.send_opc (cm.OP_STOP)
     else:
         print ('starting thread')
         trigger_loop_enabled = 1
-        cm.thr_start ()
+        cb_i = 0
+
+        # maybe put this in cm.send_trigger?
+        # sort list based on activation frame
+        cm.callbacks.sort (key=lambda t: t[1])
+
+        cm.send_opc (cm.OP_START)
 
 def connect_wrapper ():
     cm.connect ('PiTwo.local')
@@ -190,5 +196,7 @@ btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_send_cnf.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_connect.pack    (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+
+cm.thr.register_tr_cb (cm.on_fire_trigger)
 
 root.mainloop ()

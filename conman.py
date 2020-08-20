@@ -1,5 +1,7 @@
 import socket, sys, threading, struct
 from triggers import trigger_t
+from time import sleep
+from threading import Thread
 
 #define opcodes here
 OP_START    = 0x1
@@ -11,49 +13,80 @@ OP_TSET     = 0x6
 OP_TSTART   = 0x7
 OP_TSTOP    = 0x8
 
-callbacks   = []
-conf_sock   = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-tr_sock     = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-conf_sock.settimeout    (100)
-tr_sock.settimeout      (100)
+TR_A = 0xa
 
-def trigger_loop ():
-    global callbacks
-    global conf_sock
-
-    # sort list based on activation frame
-    callbacks.sort (key=lambda t: t[1])
-    print (callbacks)
-
-    i = 0
-    while (i < len (callbacks)):
-        id, a_fr, func = callbacks[i]
-
-        if thr_looping:
-            data = conf_sock.recv (BUF_SIZE)
-            print ('executing t:%i on %i' % (id, a_fr))
-            func    ()
-            print   (data)
-            i = i+1
-        
-
-# globals
 CONF_PORT   = 8081
-TR_PORT     = 8082
 BUF_SIZE    = 32
-thr_loop    = threading.Thread (name='thr_loop', target=trigger_loop)
-thr_looping = 0
+
+callbacks   = []
+sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
+cb_i = 0
+
+class Receiver (Thread):
+    def __init__ (self, sock):
+        Thread.__init__(self)
+        self._stop = 0
+        self._tr_cb = lambda a: "trigger callback not bound"
+        self.events = []
+        self.sock = sock
+
+        self.frame = 0
+        self.focus = 0
+        self.iris  = 0
+        self.zoom  = 0
+    
+    def run (self):
+        while (not self.stop == 1):
+            data = self.sock.recv (1) # read packet length
+            if (len (data) == 0):
+                break
+            _len = data[0] - 1
+            data = self.sock.recv (_len) # read rest of packet
+
+            if (data[0] == TR_A):
+                tr_id = (data[1] << 8) | data[2]
+                self._tr_cb (tr_id)
+            elif (data[0] == OP_GET):
+                self.frame = (data[1] << 8) | data [2]
+                self.focus = (data[3] << 8) | data [4]
+                self.iris  = (data[5] << 8) | data [6]
+                self.zoom  = (data[7] << 8) | data [8]
+            else:
+                opc = data[0]
+                add = data[1:]
+                e = (opc, add)
+                self.events.append (e)
+
+    def pop (self):
+        if (len (self.events) != 0):
+            return self.events.pop (len (self.events) - 1)
+        else:
+            return
+
+    def stop (self):
+        self._stop = 1
+
+    # blocks until an event is added to list
+    def wait_for_event (self):
+        while (len (self.events) == 0):
+            sleep (.1)
+    
+    def register_tr_cb (self, func = None):
+        if (func):
+            self._tr_cb = func
+
+thr = Receiver (sock)
 
 def construct_packet (opc, **kwargs):
-    packstr = "B B "
+    packstr = ">B B "
     plen = 2
-    vals = (plen, opc)
+    vals = [plen, opc]
 
     if 'cat_set' in kwargs:
         slen = len(kwargs['cat_set'])
         plen += slen
-        packstr += slen + "s "
-        vals = (*vals, kwargs['cat_set'])
+        packstr += (str (slen) + "s ")
+        vals.append (kwargs['cat_set'].encode())
 
     if 'tr_id' in kwargs:
         if not 'tr_afr' in kwargs:
@@ -61,40 +94,41 @@ def construct_packet (opc, **kwargs):
             return
         plen += 4       
         packstr += "H H "
-        vals = (*vals, kwargs['tr_id'], kwargs['tr_afr'])
+        vals.append (kwargs['tr_id'])
+        vals.append (kwargs['tr_afr'])
 
     vals[0] = plen
     packer = struct.Struct (packstr)
-    return packer.pack (*vals)
+    data = packer.pack (*vals)
+    return data
 
-#function definitions
+def send_opc (opc):
+    data = construct_packet (opc)
+    sock.send (data)
+
 def connect (addr):
-    global conf_sock
-    conf_sock.connect   ((addr, CONF_PORT))
-    thr_loop.start ()
+    global sock, thr
+    sock.connect   ((addr, CONF_PORT))
+    thr.start ()
 
 def send_trigger (triggers):
-    global conf_sock
-    status = -1
+    global sock
     for t in triggers:
-        cmd = "TRSET:%02i:%i" % (t.id, t.activation_frame)
-        conf_sock.send (cmd.encode ())
-
-        data    = conf_sock.recv (BUF_SIZE)
-        status  = str (data)
-    return status
+        data = construct_packet (OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
+        sock.send (data)
 
 def bind_id (id, activation_frame, callback = None):
     global callbacks
     if callback:
         callbacks.append ((id, activation_frame, callback))
 
-def thr_start ():
-    global thr_looping, thr_loop
-    thr_looping = 1
-
-def thr_stop ():
-    global thr_looping, thr_loop
-    thr_looping = 0
-
-        
+def on_fire_trigger (tr_id):
+    global cb_i, callbacks
+    _id, a_fr, cb = callbacks[cb_i]
+    if (_id == tr_id):
+        print ('executing t:%i on %i' % (_id, a_fr))
+        cb ()
+        cb_i += 1
+        cb_i = cb_i % len (callbacks)
+    else:
+        print ('Main: trigger first in list and fired trigger are not the same')
