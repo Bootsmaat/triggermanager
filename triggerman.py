@@ -37,6 +37,7 @@ def toggle_trigger_loop ():
 
 def connect_wrapper ():
     cm.connect ('PiTwo.local')
+    cm.send_opc (cm.OP_FD)
 
 def send_config ():
     enabled_triggers = []
