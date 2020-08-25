@@ -13,6 +13,7 @@ root.geometry ("650x600")
 FLASH_LENGTH = 200
 
 # globals
+
 selected_item = IntVar()
 trigger_item_list = []
 trigger_loop_enabled = 0
@@ -22,18 +23,23 @@ def toggle_trigger_loop ():
 
     if trigger_loop_enabled:
         print ('stopping thread')
-        trigger_loop_enabled = 0
         cm.send_opc (cm.OP_STOP)
     else:
         print ('starting thread')
-        trigger_loop_enabled = 1
-        cb_i = 0
+
+        cb_i = 0 # make sure we start with the first trigger
 
         # maybe put this in cm.send_trigger?
         # sort list based on activation frame
         cm.callbacks.sort (key=lambda t: t[1])
 
+        # get all paths from triggers
+        files = [p.path for p in trigger_list]
+        em.prep_players (files)
+
         cm.send_opc (cm.OP_START)
+    
+    trigger_loop_enabled = not trigger_loop_enabled
 
 def connect_wrapper ():
     cm.connect ('PiTwo.local')
@@ -44,7 +50,7 @@ def send_config ():
     for tr in trigger_list:
         if tr.enabled:
             enabled_triggers.append (tr)
-            cm.bind_id (tr.id, tr.activation_frame, lambda:em.dummy_func (tr.id))
+            cm.bind_id (tr.id, tr.activation_frame, lambda:em.skip ())
     
     print ('sending list %s' % enabled_triggers)
     cm.send_trigger (enabled_triggers)
@@ -70,7 +76,7 @@ def update_trigger_wrapper (_item, _id, **kwargs):
     if 'path' in kwargs:
         _path = open_file ()
         if not (len (_path) == 0):
-            kwargs['path'] = _path
+            kwargs['path'] = _path # set kwargs to actual path
             _item['text'] = path.basename (_path)
 
     if 'activation_frame' in kwargs:
@@ -187,7 +193,6 @@ btn_shooting    = tk.Button (root, text="shoot", command=toggle_trigger_loop)
 btn_connect     = tk.Button (root, text="connect", command=connect_wrapper)
 
 # packing
-
 container.pack      (fill=tk.BOTH, expand=1, anchor=tk.N)
 canvas.pack         (side=tk.LEFT, fill=tk.BOTH, expand=1)
 scrollbar.pack      (side=tk.RIGHT, fill=tk.Y)
