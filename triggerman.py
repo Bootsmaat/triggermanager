@@ -4,6 +4,7 @@ from os import path
 from triggers import *
 import conman as cm
 import exman as em
+from saver import save, load
 
 root = tk.Tk ()
 root.title ("triggerman")
@@ -17,6 +18,24 @@ FLASH_LENGTH = 200
 selected_item = IntVar()
 trigger_item_list = []
 trigger_loop_enabled = 0
+
+def on_save ():
+    print ('saving...')
+    file = filedialog.asksaveasfilename () # add some options here
+    save (file, trigger_list)
+
+def on_load ():
+    global trigger_list
+    print ('loading...')
+    file = filedialog.askopenfilename ()
+    data = load (file)
+
+    trigger_data = [trigger_t (*a) for a in data]
+
+    trigger_list = trigger_data
+
+    for tr in trigger_data:
+        add_list_item (tr)
 
 def toggle_trigger_loop ():
     global trigger_loop_enabled, cb_i
@@ -185,6 +204,13 @@ frame_trigger_list.bind (
 canvas.create_window ((0,0), window=frame_trigger_list, anchor="nw")
 canvas.configure (yscrollcommand=scrollbar.set)
 
+menubar         = tk.Menu   (root)
+filemenu        = tk.Menu   (menubar, tearoff=0)
+
+filemenu.add_command (label="Save", command=on_save)
+filemenu.add_command (label="Load", command=on_load)
+menubar.add_cascade  (label='File', menu=filemenu)
+
 btn_add         = tk.Button (root, text="add", command=add_item)
 btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy        = tk.Button (root, text="copy")
@@ -205,4 +231,5 @@ btn_connect.pack    (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 
 cm.thr.register_tr_cb (cm.on_fire_trigger)
 
+root.config (menu=menubar)
 root.mainloop ()
