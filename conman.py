@@ -112,13 +112,16 @@ def construct_packet (opc, **kwargs):
 def send_opc (opc):
     print ('sending opc: %s' % str(opc))
     data = construct_packet (opc)
-    sock.send (data)
+    try:
+        sock.send (data)
+    except BrokenPipeError:
+        print ("conman: socket broken")
 
 def connect (addr):
     global sock, thr
     try:
         sock.connect   ((addr, CONF_PORT))
-    except OSError as err:
+    except OSError:
         print ('conman: socket already connected')
     else:
         thr.start ()
