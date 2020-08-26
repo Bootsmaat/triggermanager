@@ -53,6 +53,11 @@ def find_trigger_index (id):
         if (i == len (trigger_list)):
             return -1
 
+def get_trigger_by_id (id):
+    global trigger_list
+    trs = [t for t in trigger_list if (id == t.id)]
+    return trs[0] if (len (trs) == 1) else None
+
 def update_trigger (id, **kwargs):
     i = find_trigger_index (id)
 

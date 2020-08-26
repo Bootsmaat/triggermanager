@@ -49,7 +49,6 @@ def toggle_trigger_loop ():
 
         # maybe put this in cm.send_trigger?
         # sort list based on activation frame
-        cm.callbacks.sort (key=lambda t: t[1])
 
         # get all paths from triggers
         files = [p.path for p in trigger_list]
@@ -64,11 +63,9 @@ def connect_wrapper ():
     cm.send_opc (cm.OP_FD)
 
 def send_config ():
-    enabled_triggers = []
-    for tr in trigger_list:
-        if tr.enabled:
-            enabled_triggers.append (tr)
-            cm.bind_id (tr.id, tr.activation_frame, lambda:em.skip ())
+    enabled_triggers = [tr for tr in trigger_list if tr.enabled]
+    for tr in enabled_triggers:
+        cm.bind_id (tr.id, lambda t : em.play (get_trigger_by_id (t).path))
     
     print ('sending list %s' % enabled_triggers)
     cm.send_trigger (enabled_triggers)

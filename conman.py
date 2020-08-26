@@ -21,7 +21,7 @@ TR_A = 0xa
 CONF_PORT   = 8081
 BUF_SIZE    = 32
 
-callbacks   = []
+callbacks   = {}
 sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
 cb_i = 0
 
@@ -135,18 +135,15 @@ def send_trigger (triggers):
         sock.send (data)
         sleep (.1)
 
-def bind_id (id, activation_frame, callback = None):
+def bind_id (id, callback = None):
     global callbacks
     if callback:
-        callbacks.append ((id, activation_frame, callback))
+        callbacks[id] = callback
 
 def on_fire_trigger (tr_id):
-    global cb_i, callbacks
-    _id, a_fr, cb = callbacks[cb_i]
-    if (_id == tr_id):
-        print ('executing t:%i on %i' % (_id, a_fr))
-        cb ()
-        cb_i += 1
-        cb_i = cb_i % len (callbacks)
+    global callbacks
+    if tr_id in callbacks:
+        print ('on_fire_trigger: trigger %i fired' % tr_id)
+        callbacks[tr_id] (tr_id)
     else:
-        print ('Main: trigger first in list and fired trigger are not the same')
+        print ('on_fire_trigger: key %i not bound to a callback' % tr_id)

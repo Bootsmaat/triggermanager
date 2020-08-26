@@ -25,6 +25,13 @@ def skip ():
     _mi += 1
     _mi = _mi % len (_medias)
 
+def play (file):
+    global _player, _inst
+    m = _inst.media_new (file)
+    _player.set_media (m)
+    _player.play ()
+    print ("play: playing: %s" % file)
+
 def stop ():
     global _player
     _player.stop ()

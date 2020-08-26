@@ -1,4 +1,3 @@
-# module to save and load trigger files
 import json
 
 def save (file, data):
