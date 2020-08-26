@@ -16,25 +16,24 @@ FLASH_LENGTH = 200
 # globals
 
 selected_item = IntVar()
-trigger_item_list = []
+trigger_item_list = {}
 trigger_loop_enabled = 0
 
 def on_save ():
-    print ('saving...')
-    file = filedialog.asksaveasfilename () # add some options here
+    print ('on_save: saving...')
+    file = filedialog.asksaveasfilename (defaultextension='.jad') # add some options here
     save (file, trigger_list)
 
 def on_load ():
     global trigger_list
-    print ('loading...')
-    file = filedialog.askopenfilename ()
-    data = load (file)
-
-    trigger_data = [trigger_t (*a) for a in data]
-
-    trigger_list = trigger_data
+    print ('on_load: loading...')
+    file = filedialog.askopenfilename (filetypes=[('jad files', '.jad')])
+    trigger_data = [trigger_t (*a) for a in load (file)]
+    trigger_list.clear ()
+    clear_list ()
 
     for tr in trigger_data:
+        trigger_list.append (tr)
         add_list_item (tr)
 
 def toggle_trigger_loop ():
@@ -129,7 +128,7 @@ def add_list_item (trigger):
     entry_name      = tk.Entry          (lst_item)
     btn_filepath    = tk.Button         (
         lst_item,
-        text=trigger.path,
+        text=path.basename(trigger.path),
         command=lambda: update_trigger_wrapper (
             btn_filepath,
             trigger.id,
@@ -177,11 +176,16 @@ def add_list_item (trigger):
     btn_filepath.pack   (side=tk.LEFT, padx=2, pady=1)
     entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
-    trigger_item_list.append (lst_item)
+    trigger_item_list[trigger.id] = lst_item
+
+def clear_list ():
+    for key in trigger_item_list:
+        trigger_item_list[key].pack_forget ()
 
 def remove_item ():
-    remove_trigger (selected_item.get ())
-    trigger_item_list[selected_item.get ()].pack_forget ()
+    selected_id = selected_item.get ()
+    remove_trigger (selected_id)
+    trigger_item_list[selected_id].pack_forget ()
 
 def add_item ():
     add_trigger ()
@@ -189,10 +193,10 @@ def add_item ():
 
 # Setup scroll frame
 
-container           = tk.Frame (root)
-canvas              = tk.Canvas (container)
-scrollbar           = tk.Scrollbar (container, orient="vertical", command=canvas.yview)
-frame_trigger_list  = tk.Frame (canvas)
+container           = tk.Frame      (root)
+canvas              = tk.Canvas     (container)
+scrollbar           = tk.Scrollbar  (container, orient="vertical", command=canvas.yview)
+frame_trigger_list  = tk.Frame      (canvas)
 
 frame_trigger_list.bind (
     "<Configure>",

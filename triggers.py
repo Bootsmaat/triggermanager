@@ -16,16 +16,19 @@ trigger_t = namedtuple (
 trigger_list = []
 id_counter   = 0
 
+def get_highest_id (triggers):
+    ids = [tr.id for tr in triggers]
+    return max (ids) if (len (triggers) != 0) else 0
+
 # function definitions
 def add_trigger ():
     global id_counter
 
-    _id         = id_counter
-    id_counter  = id_counter + 1
+    hi = get_highest_id (trigger_list) + 1
 
     trigger = trigger_t (
-        id                  =  _id,
-        name                = "trigger_%i" % _id,
+        id                  =  hi,
+        name                = "trigger_%i" % hi,
         path                = "No file set",
         enabled             = 1,
         activation_frame    = 0
@@ -34,8 +37,11 @@ def add_trigger ():
     trigger_list.append (trigger)
 
 def remove_trigger (id):
+    global trigger_list
+
     for tr in trigger_list:
         if (tr.id == id):
+            print ('triggers: removing trigger %i' % tr.id)
             trigger_list.remove (tr)
             return
         pass
