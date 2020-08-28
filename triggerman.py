@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, IntVar
-from os import path
+from os import path 
+from pathlib import Path
 from triggers import *
 import conman as cm
 import exman as em
@@ -36,23 +37,20 @@ def on_load ():
         trigger_list.append (tr)
         add_list_item (tr)
 
+def on_open_playback ():
+    v_files = [a.path for a in trigger_list if (Path (a.path).suffix == '.mp4') and a.enabled]
+    em.prep_video_player (v_files[0])
+
+def on_stop_playback ():
+    em.stop_video ()
+
 def toggle_trigger_loop ():
     global trigger_loop_enabled, cb_i
 
     if trigger_loop_enabled:
-        print ('stopping thread')
         cm.send_opc (cm.OP_STOP)
     else:
-        print ('starting thread')
-
         cb_i = 0 # make sure we start with the first trigger
-
-        # maybe put this in cm.send_trigger?
-        # sort list based on activation frame
-
-        # get all paths from triggers
-        files = [p.path for p in trigger_list]
-        em.prep_players (files)
 
         cm.send_opc (cm.OP_START)
     
@@ -63,18 +61,28 @@ def connect_wrapper ():
     cm.send_opc (cm.OP_FD)
 
 def send_config ():
-    enabled_triggers = [tr for tr in trigger_list if tr.enabled]
-    for tr in enabled_triggers:
-        cm.bind_id (tr.id, lambda t : em.play (get_trigger_by_id (t).path))
+    enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
+    a_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.wav')]
+    v_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.mp4')]
     
+    for a in a_files:
+        cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
+    
+    for v in v_files:
+        cm.bind_id (v.id, lambda t : em.play_video (get_trigger_by_id (t).path))
+    
+    # let user do this with menu option
+    # if (len (v_files) != 0):
+    #     em.prep_video_player (v_files[0].path)
+
     print ('sending list %s' % enabled_triggers)
     cm.send_trigger (enabled_triggers)
 
 def open_file ():
     _path = filedialog.askopenfilename (
         filetypes=[
-            ("all files", "*.*"),
-            ("Mp3 Files", "*.mp3"),
+            # ("all files", "*.*"),
+            ("Mp4 Files", "*.mp4"),
             ("WAV files", "*.wav")
         ]
     )
@@ -206,11 +214,17 @@ canvas.create_window ((0,0), window=frame_trigger_list, anchor="nw")
 canvas.configure (yscrollcommand=scrollbar.set)
 
 menubar         = tk.Menu   (root)
-filemenu        = tk.Menu   (menubar, tearoff=0)
 
-filemenu.add_command (label="Save", command=on_save)
-filemenu.add_command (label="Load", command=on_load)
-menubar.add_cascade  (label='File', menu=filemenu)
+filemenu        = tk.Menu   (menubar, tearoff=0)
+videomenu       = tk.Menu   (menubar, tearoff=0)
+
+filemenu.add_command    (label="Save", command=on_save)
+filemenu.add_command    (label="Load", command=on_load)
+menubar.add_cascade     (label='File', menu=filemenu)
+
+videomenu.add_command   (label='open playback window', command=on_open_playback)
+videomenu.add_command   (label='stop video', command=on_stop_playback)
+menubar.add_cascade     (label='Video', menu=videomenu)
 
 btn_add         = tk.Button (root, text="add", command=add_item)
 btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)

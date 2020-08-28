@@ -6,6 +6,8 @@ _mi = 0
 
 _player = vlc.MediaPlayer ()
 _inst = _player.get_instance ()
+_vplayer = vlc.MediaPlayer ()
+_vplayer_inst = _vplayer.get_instance ()
 
 def exec_player_cmd (mps, func):
     for mp in mps:
@@ -32,6 +34,21 @@ def play (file):
     _player.play ()
     print ("play: playing: %s" % file)
 
+def play_video (file):
+    global _vplayer_inst, _vplayer
+    m = _vplayer_inst.media_new (file)
+    _vplayer.set_media (m)
+    _vplayer.play()
+
+def prep_video_player (first_vid):
+    global _vplayer_inst, _vplayer
+    m = _vplayer_inst.media_new (first_vid)
+    _vplayer.set_media (m)
+    _vplayer.play()
+    sleep (.5)
+    _vplayer.pause ()
+    _vplayer.set_position (0)
+
 def stop ():
     global _player
     _player.stop ()
@@ -39,6 +56,10 @@ def stop ():
 def pause ():
     global _player
     _player.pause ()
+
+def stop_video ():
+    global _vplayer
+    _vplayer.stop ()
 
 def dummy_func (add = None):
     print ('placeholder function %s' % str (add))
