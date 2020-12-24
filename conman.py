@@ -121,8 +121,9 @@ def connect (addr):
     global sock, thr
     try:
         sock.connect   ((addr, CONF_PORT))
-    except OSError:
-        print ('conman: socket already connected')
+    except OSError as e:
+        print ('OSError raised')
+        raise e
     else:
         thr.start ()
 

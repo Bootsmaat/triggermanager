@@ -15,7 +15,6 @@ root.geometry ("650x600")
 FLASH_LENGTH = 200
 
 # globals
-
 selected_item = IntVar()
 trigger_item_list = {}
 trigger_loop_enabled = 0
@@ -56,14 +55,23 @@ def toggle_trigger_loop ():
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper ():
-    cm.connect ('PiTwo.local')
-    cm.send_opc (cm.OP_FD)
+def connect_wrapper (window = None):
+    try:
+        # make this a dropdown
+        cm.connect ('PiTwo.local')
+        cm.send_opc (cm.OP_FD)
+    except:
+        print ("connection failed")
+    else:
+        if (window):
+            window.destroy ()
+
 
 def send_config ():
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
     a_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.wav')]
     v_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.mp4')]
+    # ONLY BINDS .mp4 VID FILES TO PLAY!
     
     for a in a_files:
         cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
@@ -231,7 +239,17 @@ btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy        = tk.Button (root, text="copy")
 btn_send_cnf    = tk.Button (root, text="send to pi", command=send_config)
 btn_shooting    = tk.Button (root, text="shoot", command=toggle_trigger_loop)
-btn_connect     = tk.Button (root, text="connect", command=connect_wrapper)
+# btn_connect     = tk.Button (root, text="connect", command=connect_wrapper)
+
+# connect panel
+connect_panel = tk.Toplevel (root)
+connect_panel.title         ("connect")
+connect_panel.attributes    ("-topmost", True)
+connect_panel.grab_set      ()
+
+btn_connect = tk.Button     (connect_panel, text="connect", 
+                                command=lambda: connect_wrapper (connect_panel))
+btn_connect.pack            (fill=tk.BOTH, expand=1, anchor=tk.N)
 
 # packing
 container.pack      (fill=tk.BOTH, expand=1, anchor=tk.N)
@@ -242,9 +260,10 @@ btn_remove.pack     (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_send_cnf.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
-btn_connect.pack    (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+
 
 cm.thr.register_tr_cb (cm.on_fire_trigger)
+
 
 root.config (menu=menubar)
 root.mainloop ()
