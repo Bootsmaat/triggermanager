@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, IntVar
+from tkinter import filedialog, messagebox, scrolledtext
 from os import path 
 from pathlib import Path
 from triggers import *
@@ -15,9 +15,19 @@ root.geometry ("650x600")
 FLASH_LENGTH = 200
 
 # globals
-selected_item = IntVar()
+selected_item = tk.IntVar()
 trigger_item_list = {}
 trigger_loop_enabled = 0
+
+# TODO Custom option should expand to fill in ip address
+conn_options = [
+    "IronPi.local",
+    "PiTwo.local",
+    "Custom..."
+]
+# storing the option for which address to connect to
+conn_addr_str = tk.StringVar()
+conn_addr_str.set (conn_options[0])
 
 def on_save ():
     print ('on_save: saving...')
@@ -55,13 +65,12 @@ def toggle_trigger_loop ():
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper (window = None):
+def connect_wrapper (window = None, error_field = None):
     try:
-        # make this a dropdown
-        cm.connect ('PiTwo.local')
+        cm.connect (conn_addr_str.get ())
         cm.send_opc (cm.OP_FD)
-    except:
-        print ("connection failed")
+    except BaseException as e:
+        error_field.insert (tk.END, e)
     else:
         if (window):
             window.destroy ()
@@ -130,7 +139,7 @@ def update_trigger_wrapper (_item, _id, **kwargs):
 def add_list_item (trigger):
     global selected_item
 
-    enabled = IntVar ()
+    enabled = tk.IntVar ()
     enabled.set (trigger.enabled)
 
     # root of item
@@ -246,10 +255,19 @@ connect_panel = tk.Toplevel (root)
 connect_panel.title         ("connect")
 connect_panel.attributes    ("-topmost", True)
 connect_panel.grab_set      ()
+connect_panel.geometry      ("365x345")
+
+address_picker_menu = tk.OptionMenu (connect_panel, conn_addr_str, *conn_options)
+
+error_widget = scrolledtext.ScrolledText (connect_panel)
+error_widget.bind                        ("<Key>", lambda e:"break")
 
 btn_connect = tk.Button     (connect_panel, text="connect", 
-                                command=lambda: connect_wrapper (connect_panel))
-btn_connect.pack            (fill=tk.BOTH, expand=1, anchor=tk.N)
+command=lambda: connect_wrapper (window=connect_panel, error_field=error_widget))
+
+btn_connect.pack            (anchor=tk.NW)
+address_picker_menu.pack    (anchor=tk.NW)
+error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
 # packing
 container.pack      (fill=tk.BOTH, expand=1, anchor=tk.N)
@@ -261,9 +279,7 @@ btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_send_cnf.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 
-
 cm.thr.register_tr_cb (cm.on_fire_trigger)
-
 
 root.config (menu=menubar)
 root.mainloop ()
