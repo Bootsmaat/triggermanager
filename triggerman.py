@@ -29,6 +29,15 @@ conn_options = [
 conn_addr_str = tk.StringVar()
 conn_addr_str.set (conn_options[0])
 
+def on_connect_panel_close ():
+    root.destroy ()
+
+def on_root_close ():
+    if messagebox.askokcancel ("Quit", "Are you sure?"):
+        cm.sock.close ()
+        cm.thr.stop ()
+        root.destroy ()
+
 def on_save ():
     print ('on_save: saving...')
     file = filedialog.asksaveasfilename (defaultextension='.jad') # add some options here
@@ -283,4 +292,6 @@ btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 cm.thr.register_tr_cb (cm.on_fire_trigger)
 
 root.config (menu=menubar)
+connect_panel.protocol ("WM_DELETE_WINDOW", on_connect_panel_close)
+root.protocol ("WM_DELETE_WINDOW", on_root_close)
 root.mainloop ()
