@@ -70,6 +70,7 @@ def connect_wrapper (window = None, error_field = None):
         cm.connect (conn_addr_str.get ())
         cm.send_opc (cm.OP_FD)
     except BaseException as e:
+        error_field.delete ('1.0', tk.END)
         error_field.insert (tk.END, e)
     else:
         if (window):
