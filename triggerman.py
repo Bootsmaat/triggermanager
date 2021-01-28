@@ -23,7 +23,7 @@ trigger_loop_enabled = 0
 conn_options = [
     "IronPi.local",
     "PiTwo.local",
-    "Custom..."
+    # "Custom..."
 ]
 # storing the option for which address to connect to
 conn_addr_str = tk.StringVar()
