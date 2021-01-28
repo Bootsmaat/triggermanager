@@ -8,7 +8,7 @@ import exman as em
 from saver import save, load
 
 root = tk.Tk ()
-root.title ("triggerman")
+root.title ("triggerman (V1.0)")
 root.geometry ("650x600")
 
 # gui globals
