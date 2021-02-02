@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext
+from tkinter import filedialog, messagebox, scrolledtext, font
 from os import path 
 from pathlib import Path
 from triggers import *
@@ -223,6 +223,11 @@ def add_item ():
     add_trigger ()
     add_list_item (trigger_list[-1])
 
+# Load assets
+img_icon_grey = tk.PhotoImage (file=path.join ('assets', 'status_icon_grey.gif'))
+img_icon_red = tk.PhotoImage (file=path.join ('assets', 'status_icon_red.gif'))
+img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif'))
+
 # Setup scroll frame
 
 container           = tk.Frame      (root)
@@ -253,12 +258,28 @@ videomenu.add_command   (label='open playback window', command=on_open_playback)
 videomenu.add_command   (label='stop video', command=on_stop_playback)
 menubar.add_cascade     (label='Video', menu=videomenu)
 
-btn_add         = tk.Button (root, text="add", command=add_item)
-btn_remove      = tk.Button (root, text="remove", bg="red", command=remove_item)
-btn_copy        = tk.Button (root, text="copy")
-btn_send_cnf    = tk.Button (root, text="send to pi", command=send_config)
-btn_shooting    = tk.Button (root, text="shoot", command=toggle_trigger_loop)
-# btn_connect     = tk.Button (root, text="connect", command=connect_wrapper)
+font_highlight = font.Font (weight='bold', slant='italic')
+
+# status bar 
+status_bar              = tk.Frame  (root)
+btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
+btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
+lbl_frame_status_hdr    = tk.Label  (status_bar, text="Fr:", font=font_highlight)
+lbl_frame_status        = tk.Label  (status_bar, text="00000")
+lbl_focus_status_hdr    = tk.Label  (status_bar, text="F:", font=font_highlight)
+lbl_focus_status        = tk.Label  (status_bar, text="00000")
+lbl_iris_status_hdr     = tk.Label  (status_bar, text="I:", font=font_highlight)
+lbl_iris_status         = tk.Label  (status_bar, text="00000")
+lbl_zoom_status_hdr     = tk.Label  (status_bar, text="Z:", font=font_highlight)
+lbl_zoom_status         = tk.Label  (status_bar, text="00000")
+
+
+# control buttons
+btn_add               = tk.Button (root, text="add", command=add_item)
+btn_remove            = tk.Button (root, text="remove", bg="red", command=remove_item)
+btn_copy              = tk.Button (root, text="copy")
+btn_send_cnf          = tk.Button (root, text="send to pi", command=send_config)
+btn_shooting          = tk.Button (root, text="shoot", command=toggle_trigger_loop)
 
 # connect panel
 connect_panel = tk.Toplevel (root)
@@ -280,14 +301,26 @@ address_picker_menu.pack    (anchor=tk.NW)
 error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
 # packing
-container.pack      (fill=tk.BOTH, expand=1, anchor=tk.N)
-canvas.pack         (side=tk.LEFT, fill=tk.BOTH, expand=1)
-scrollbar.pack      (side=tk.RIGHT, fill=tk.Y)
-btn_add.pack        (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_remove.pack     (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_copy.pack       (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_send_cnf.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
-btn_shooting.pack   (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
+container.pack              (fill=tk.BOTH, expand=1, anchor=tk.N)
+canvas.pack                 (side=tk.LEFT, fill=tk.BOTH, expand=1)
+scrollbar.pack              (side=tk.RIGHT, fill=tk.Y)
+btn_add.pack                (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_remove.pack             (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_copy.pack               (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
+btn_send_cnf.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+btn_shooting.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+
+btn_status_connection.pack      (side=tk.LEFT, anchor=tk.NW)
+btn_status_shooting.pack        (side=tk.LEFT, anchor=tk.NW)
+lbl_frame_status_hdr.pack       (side=tk.LEFT, anchor=tk.NW)
+lbl_frame_status.pack           (side=tk.LEFT, anchor=tk.NW)
+lbl_focus_status_hdr.pack       (side=tk.LEFT, anchor=tk.NW)
+lbl_focus_status.pack           (side=tk.LEFT, anchor=tk.NW)
+lbl_iris_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
+lbl_iris_status.pack            (side=tk.LEFT, anchor=tk.NW)
+lbl_zoom_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
+lbl_zoom_status.pack            (side=tk.LEFT, anchor=tk.NW)
 
 cm.thr.register_tr_cb (cm.on_fire_trigger)
 
