@@ -11,6 +11,11 @@ root = tk.Tk ()
 root.title ("triggerman (V1.0)")
 root.geometry ("650x600")
 
+# Load assets
+img_icon_grey = tk.PhotoImage (file=path.join ('assets', 'status_icon_grey.gif'))
+img_icon_red = tk.PhotoImage (file=path.join ('assets', 'status_icon_red.gif'))
+img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif'))
+
 # gui globals
 FLASH_LENGTH = 200
 
@@ -74,14 +79,14 @@ def toggle_trigger_loop ():
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper (window = None, error_field = None):
+def connect_wrapper (window = None, error_field = None, connect_icon = None):
     try:
         cm.connect (conn_addr_str.get ())
         cm.send_opc (cm.OP_FD)
     except BaseException as e:
-        error_field.delete ('1.0', tk.END)
         error_field.insert (tk.END, e)
     else:
+        connect_icon['image'] = img_icon_green
         if (window):
             window.destroy ()
 
@@ -223,10 +228,6 @@ def add_item ():
     add_trigger ()
     add_list_item (trigger_list[-1])
 
-# Load assets
-img_icon_grey = tk.PhotoImage (file=path.join ('assets', 'status_icon_grey.gif'))
-img_icon_red = tk.PhotoImage (file=path.join ('assets', 'status_icon_red.gif'))
-img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif'))
 
 # Setup scroll frame
 
@@ -293,12 +294,7 @@ address_picker_menu = tk.OptionMenu (connect_panel, conn_addr_str, *conn_options
 error_widget = scrolledtext.ScrolledText (connect_panel)
 error_widget.bind                        ("<Key>", lambda e:"break")
 
-btn_connect = tk.Button     (connect_panel, text="connect", 
-command=lambda: connect_wrapper (window=connect_panel, error_field=error_widget))
 
-btn_connect.pack            (anchor=tk.NW)
-address_picker_menu.pack    (anchor=tk.NW)
-error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
 # packing
 status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
@@ -321,6 +317,13 @@ lbl_iris_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
 lbl_iris_status.pack            (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status.pack            (side=tk.LEFT, anchor=tk.NW)
+
+btn_connect = tk.Button     (connect_panel, text="connect", 
+command=lambda: connect_wrapper (window=connect_panel, error_field=error_widget, connect_icon=btn_status_connection))
+
+btn_connect.pack            (anchor=tk.NW)
+address_picker_menu.pack    (anchor=tk.NW)
+error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
 cm.thr.register_tr_cb (cm.on_fire_trigger)
 
