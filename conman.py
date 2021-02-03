@@ -20,6 +20,7 @@ TR_A = 0xa
 
 CONF_PORT   = 8081
 BUF_SIZE    = 32
+TIMEOUT     = 1
 
 callbacks   = {}
 sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
@@ -28,10 +29,13 @@ cb_i = 0
 class Receiver (Thread):
     def __init__ (self, sock):
         Thread.__init__(self)
-        self._stop = 0
-        self._tr_cb = lambda a: "trigger callback not bound"
-        self.events = []
-        self.sock = sock
+        self._stop      = 0
+        self._tr_cb     = lambda a: print ("trigger callback not bound")
+        self._error_cb  = lambda a: print ("error callback not bound")
+        self.events     = []
+        self.sock       = sock
+
+        # sock.settimeout (TIMEOUT)
 
         self.frame = 0
         self.focus = 0
@@ -41,7 +45,10 @@ class Receiver (Thread):
     def run (self):
         while (not self.stop == 1):
             if (not self.sock._closed):
-                data = self.sock.recv (1) # read packet length
+                try:
+                    data = self.sock.recv (1) # read packet length
+                except BaseException as e:
+                    self._error_cb (e)
             else:
                 return
 
@@ -82,6 +89,10 @@ class Receiver (Thread):
         if (func):
             self._tr_cb = func
 
+    def register_error_cb (self, func = None):
+        if (func):
+            self._error_cb = func
+
 thr = Receiver (sock)
 
 def construct_packet (opc, **kwargs):
@@ -110,12 +121,15 @@ def construct_packet (opc, **kwargs):
     return data
 
 def send_opc (opc):
+    global thr
     print ('sending opc: %s' % str(opc))
     data = construct_packet (opc)
     try:
         sock.send (data)
-    except BrokenPipeError:
-        print ("conman: socket broken")
+    except BrokenPipeError as e:
+        thr._error_cb (e)
+    except ConnectionAbortedError as e:
+        thr._error_cb (e)
 
 def connect (addr):
     global sock, thr
@@ -129,11 +143,14 @@ def connect (addr):
 
 # sends all triggers
 def send_trigger (triggers):
-    global sock
+    global sock, thr
     send_opc (OP_TCLEAR)
     for t in triggers:
         data = construct_packet (OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
-        sock.send (data)
+        try:
+            sock.send (data)
+        except ConnectionAbortedError as e:
+            thr._error_cb (e)
         sleep (.1)
 
 def bind_id (id, callback = None):

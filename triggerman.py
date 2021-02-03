@@ -228,6 +228,10 @@ def add_item ():
     add_trigger ()
     add_list_item (trigger_list[-1])
 
+# raised when conman cant send data over socket
+def on_connection_error_event (error, connection_widget):
+    connection_widget['image'] = img_icon_red
+
 
 # Setup scroll frame
 
@@ -326,6 +330,7 @@ address_picker_menu.pack    (anchor=tk.NW)
 error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
 cm.thr.register_tr_cb (cm.on_fire_trigger)
+cm.thr.register_error_cb (lambda a: on_connection_error_event (a, btn_status_connection))
 
 root.config (menu=menubar)
 connect_panel.protocol ("WM_DELETE_WINDOW", on_connect_panel_close)
