@@ -67,12 +67,16 @@ def on_open_playback ():
 def on_stop_playback ():
     em.stop_video ()
 
-def toggle_trigger_loop ():
+def toggle_trigger_loop (widget = None):
     global trigger_loop_enabled, cb_i
 
     if trigger_loop_enabled:
         cm.send_opc (cm.OP_STOP)
+        if (widget):
+            widget['image'] = img_icon_grey
     else:
+        if (widget):
+            widget['image'] = img_icon_red
         cb_i = 0 # make sure we start with the first trigger
 
         cm.send_opc (cm.OP_START)
@@ -84,12 +88,12 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None):
         cm.connect (conn_addr_str.get ())
         cm.send_opc (cm.OP_FD)
     except BaseException as e:
-        error_field.insert (tk.END, e)
+        if (error_field):
+            error_field.insert (tk.END, e)
     else:
         connect_icon['image'] = img_icon_green
         if (window):
             window.destroy ()
-
 
 def send_config ():
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
@@ -230,8 +234,7 @@ def add_item ():
 
 # raised when conman cant send data over socket
 def on_connection_error_event (error, connection_widget):
-    connection_widget['image'] = img_icon_red
-
+    connection_widget['image'] = img_icon_grey
 
 # Setup scroll frame
 
@@ -268,6 +271,7 @@ font_highlight = font.Font (weight='bold', slant='italic')
 # status bar 
 status_bar              = tk.Frame  (root)
 btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
+btn_status_connection.configure (command=lambda: connect_wrapper (connect_icon=btn_status_connection))
 btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
 lbl_frame_status_hdr    = tk.Label  (status_bar, text="Fr:", font=font_highlight)
 lbl_frame_status        = tk.Label  (status_bar, text="00000")
@@ -284,7 +288,7 @@ btn_add               = tk.Button (root, text="add", command=add_item)
 btn_remove            = tk.Button (root, text="remove", bg="red", command=remove_item)
 btn_copy              = tk.Button (root, text="copy")
 btn_send_cnf          = tk.Button (root, text="send to pi", command=send_config)
-btn_shooting          = tk.Button (root, text="shoot", command=toggle_trigger_loop)
+btn_shooting          = tk.Button (root, text="shoot", command=lambda: toggle_trigger_loop (btn_status_shooting))
 
 # connect panel
 connect_panel = tk.Toplevel (root)
@@ -297,8 +301,6 @@ address_picker_menu = tk.OptionMenu (connect_panel, conn_addr_str, *conn_options
 
 error_widget = scrolledtext.ScrolledText (connect_panel)
 error_widget.bind                        ("<Key>", lambda e:"break")
-
-
 
 # packing
 status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
@@ -329,8 +331,8 @@ btn_connect.pack            (anchor=tk.NW)
 address_picker_menu.pack    (anchor=tk.NW)
 error_widget.pack           (anchor=tk.N, padx=5, pady=5)
 
-cm.thr.register_tr_cb (cm.on_fire_trigger)
-cm.thr.register_error_cb (lambda a: on_connection_error_event (a, btn_status_connection))
+cm.register_tr_cb (cm.on_fire_trigger)
+cm.register_error_cb (lambda a: on_connection_error_event (a, btn_status_connection))
 
 root.config (menu=menubar)
 connect_panel.protocol ("WM_DELETE_WINDOW", on_connect_panel_close)

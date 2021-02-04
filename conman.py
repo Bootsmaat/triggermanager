@@ -24,14 +24,14 @@ TIMEOUT     = 1
 
 callbacks   = {}
 sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-cb_i = 0
+cb_i        = 0
+trigger_cb  = lambda a: print ("trigger callback not bound")
+error_cb    = lambda a: print ("error callback not bound")
 
 class Receiver (Thread):
     def __init__ (self, sock):
         Thread.__init__(self)
         self._stop      = 0
-        self._tr_cb     = lambda a: print ("trigger callback not bound")
-        self._error_cb  = lambda a: print ("error callback not bound")
         self.events     = []
         self.sock       = sock
 
@@ -48,7 +48,7 @@ class Receiver (Thread):
                 try:
                     data = self.sock.recv (1) # read packet length
                 except BaseException as e:
-                    self._error_cb (e)
+                    error_cb (e)
             else:
                 return
 
@@ -85,13 +85,15 @@ class Receiver (Thread):
         while (len (self.events) == 0):
             sleep (.1)
     
-    def register_tr_cb (self, func = None):
-        if (func):
-            self._tr_cb = func
+def register_tr_cb (func = None):
+    global trigger_cb
+    if (func):
+        trigger_cb = func
 
-    def register_error_cb (self, func = None):
-        if (func):
-            self._error_cb = func
+def register_error_cb (func = None):
+    global error_cb
+    if (func):
+        error_cb = func
 
 thr = Receiver (sock)
 
@@ -127,18 +129,26 @@ def send_opc (opc):
     try:
         sock.send (data)
     except BrokenPipeError as e:
-        thr._error_cb (e)
+        error_cb (e)
+        thr.stop ()
     except ConnectionAbortedError as e:
-        thr._error_cb (e)
+        error_cb (e)
+        thr.stop ()
 
 def connect (addr):
     global sock, thr
+    if (not sock._closed):
+        sock.close ()
+
+    sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect   ((addr, CONF_PORT))
+        thr = Receiver (sock)
     except OSError as e:
         print ('OSError raised')
         raise e
     else:
+        send_opc (OP_FD)
         thr.start ()
 
 # sends all triggers
@@ -150,7 +160,8 @@ def send_trigger (triggers):
         try:
             sock.send (data)
         except ConnectionAbortedError as e:
-            thr._error_cb (e)
+            error_cb (e)
+            thr.stop ()
         sleep (.1)
 
 def bind_id (id, callback = None):
