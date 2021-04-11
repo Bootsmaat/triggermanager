@@ -28,7 +28,7 @@ trigger_loop_enabled = 0
 conn_options = [
     "IronPi.local",
     "PiTwo.local",
-    # "Custom..."
+     "Custom..."
 ]
 # storing the option for which address to connect to
 conn_addr_str = tk.StringVar()
@@ -83,9 +83,16 @@ def toggle_trigger_loop (widget = None):
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper (window = None, error_field = None, connect_icon = None):
+def connect_wrapper (window = None, error_field = None, connect_icon = None, connection_string_widget = None):
+    connection_string = None
+
+    if (conn_addr_str.get () == conn_options[-1]):
+        connection_string = entry_custom_connection_string.get ()
+    else:
+        connection_string = conn_addr_str.get ()
+
     try:
-        cm.connect (conn_addr_str.get ())
+        cm.connect (connection_string)
         cm.send_opc (cm.OP_FD)
     except BaseException as e:
         if (error_field):
@@ -302,6 +309,9 @@ address_picker_menu = tk.OptionMenu (connect_panel, conn_addr_str, *conn_options
 error_widget = scrolledtext.ScrolledText (connect_panel)
 error_widget.bind                        ("<Key>", lambda e:"break")
 
+entry_custom_connection_string = tk.Entry (connect_panel)
+entry_custom_connection_string.insert (0, 'custom IP...')
+
 # packing
 status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
 container.pack              (fill=tk.BOTH, expand=1, anchor=tk.N)
@@ -325,11 +335,18 @@ lbl_zoom_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status.pack            (side=tk.LEFT, anchor=tk.NW)
 
 btn_connect = tk.Button     (connect_panel, text="connect", 
-command=lambda: connect_wrapper (window=connect_panel, error_field=error_widget, connect_icon=btn_status_connection))
 
-btn_connect.pack            (anchor=tk.NW)
-address_picker_menu.pack    (anchor=tk.NW)
-error_widget.pack           (anchor=tk.N, padx=5, pady=5)
+command=lambda: connect_wrapper (
+    window=connect_panel,
+    error_field=error_widget,
+    connect_icon=btn_status_connection,
+    connection_string_widget=entry_custom_connection_string
+    ))
+
+btn_connect.pack                    (anchor=tk.NW)
+address_picker_menu.pack            (anchor=tk.NW)
+entry_custom_connection_string.pack (anchor=tk.NW)
+error_widget.pack                   (anchor=tk.N, padx=5, pady=5)
 
 cm.register_tr_cb (cm.on_fire_trigger)
 cm.register_error_cb (lambda a: on_connection_error_event (a, btn_status_connection))

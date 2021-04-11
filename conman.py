@@ -43,6 +43,7 @@ class Receiver (Thread):
         self.zoom  = 0
     
     def run (self):
+        global trigger_cb
         while (not self.stop == 1):
             if (not self.sock._closed):
                 try:
@@ -59,7 +60,7 @@ class Receiver (Thread):
 
             if (data[0] == TR_A): # trigger fire message
                 tr_id = (data[1] << 8) | data[2]
-                self._tr_cb (tr_id)
+                trigger_cb (tr_id)
             elif (data[0] == OP_GET):
                 self.frame = (data[1] << 8) | data [2]
                 self.focus = (data[3] << 8) | data [4]
