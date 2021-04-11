@@ -165,6 +165,15 @@ def send_trigger (triggers):
             thr.stop ()
         sleep (.1)
 
+def send_fiz_config (fiz_string):
+    global sock, thr
+    data = construct_packet (OP_SET, cat_set=fiz_string)
+    try:
+        sock.send (data)
+    except ConnectionAbortedError as e:
+        error_cb (e)
+        thr.stop ()
+
 def bind_id (id, callback = None):
     global callbacks
     if callback:

@@ -11,6 +11,8 @@ root = tk.Tk ()
 root.title ("triggerman (V1.0)")
 root.geometry ("650x600")
 
+import fizlayoutpanel
+
 # Load assets
 img_icon_grey = tk.PhotoImage (file=path.join ('assets', 'status_icon_grey.gif'))
 img_icon_red = tk.PhotoImage (file=path.join ('assets', 'status_icon_red.gif'))
@@ -24,7 +26,6 @@ selected_item = tk.IntVar()
 trigger_item_list = {}
 trigger_loop_enabled = 0
 
-# TODO Custom option should expand to fill in ip address
 conn_options = [
     "IronPi.local",
     "PiTwo.local",
@@ -264,6 +265,7 @@ menubar         = tk.Menu   (root)
 
 filemenu        = tk.Menu   (menubar, tearoff=0)
 videomenu       = tk.Menu   (menubar, tearoff=0)
+config_menu     = tk.Menu   (menubar, tearoff=0)
 
 filemenu.add_command    (label="Save", command=on_save)
 filemenu.add_command    (label="Load", command=on_load)
@@ -272,6 +274,9 @@ menubar.add_cascade     (label='File', menu=filemenu)
 videomenu.add_command   (label='open playback window', command=on_open_playback)
 videomenu.add_command   (label='stop video', command=on_stop_playback)
 menubar.add_cascade     (label='Video', menu=videomenu)
+
+config_menu.add_command (label='FIZ Layout', command=lambda: fizlayoutpanel.open_layout_panel(root))
+menubar.add_cascade     (label='Configuration', menu=config_menu)
 
 font_highlight = font.Font (weight='bold', slant='italic')
 
@@ -288,7 +293,6 @@ lbl_iris_status_hdr     = tk.Label  (status_bar, text="I:", font=font_highlight)
 lbl_iris_status         = tk.Label  (status_bar, text="00000")
 lbl_zoom_status_hdr     = tk.Label  (status_bar, text="Z:", font=font_highlight)
 lbl_zoom_status         = tk.Label  (status_bar, text="00000")
-
 
 # control buttons
 btn_add               = tk.Button (root, text="add", command=add_item)
