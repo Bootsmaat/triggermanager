@@ -22,6 +22,7 @@ img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif
 FLASH_LENGTH = 200
 
 # globals
+btn_submit = None
 selected_item = tk.IntVar()
 trigger_item_list = {}
 trigger_loop_enabled = 0
@@ -104,6 +105,9 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None, con
             window.destroy ()
 
 def send_config ():
+
+    btn_submit['bg'] = 'green'
+
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
     a_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.wav')]
     v_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.mp4')]
@@ -138,6 +142,8 @@ def update_element (_item, **kwargs):
 
 def update_trigger_wrapper (widget, id, **kwargs):
 
+    btn_submit['bg'] = 'red'
+
     orig_color = widget.cget ("background")
 
     if 'path' in kwargs:
@@ -171,7 +177,7 @@ def add_list_item (trigger):
 
     btn_selected    = tk.Radiobutton    (lst_item, variable=selected_item, value=trigger.id)
     lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
-    entry_name      = tk.Entry          (lst_item)
+    entry_name      = tk.Entry          (lst_item, fg='white', bg='red')
     btn_filepath    = tk.Button         (
         lst_item,
         text=path.basename(trigger.path),
@@ -191,7 +197,7 @@ def add_list_item (trigger):
             enabled=enabled.get ()
         )
     )
-    entry_tframe    = tk.Entry          (lst_item)
+    entry_tframe    = tk.Entry (lst_item, fg='white', bg='red')
 
     entry_name.insert   (0, trigger.name)
     entry_name.bind     (
@@ -238,7 +244,6 @@ def on_entry_name_leave (widget=None, id=None):
 
     if (original_name != widget.get ()):
         widget['bg'] = 'red'
-        widget['fg'] = 'white'
 
 def on_entry_tframe_leave (widget=None, id=None):
     trigger = get_trigger_by_id (id)
@@ -246,7 +251,6 @@ def on_entry_tframe_leave (widget=None, id=None):
 
     if (original_tframe != int(widget.get ())):
         widget['bg'] = 'red'
-        widget['fg'] = 'white'
 
 def clear_list ():
     for key in trigger_item_list:
@@ -318,8 +322,13 @@ lbl_zoom_status         = tk.Label  (status_bar, text="00000")
 # control buttons
 btn_add               = tk.Button (root, text="add", command=add_item)
 btn_remove            = tk.Button (root, text="remove", bg="red", command=remove_item)
-btn_copy              = tk.Button (root, text="copy")
-btn_send_cnf          = tk.Button (root, text="send to pi", command=send_config)
+btn_submit            = tk.Button (
+                                    root,
+                                    text="send to pi",
+                                    fg='white',
+                                    bg='red',
+                                    command=send_config
+                                )
 btn_shooting          = tk.Button (root, text="shoot", command=lambda: toggle_trigger_loop (btn_status_shooting))
 
 # connect panel
@@ -344,8 +353,7 @@ canvas.pack                 (side=tk.LEFT, fill=tk.BOTH, expand=1)
 scrollbar.pack              (side=tk.RIGHT, fill=tk.Y)
 btn_add.pack                (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_remove.pack             (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_copy.pack               (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_send_cnf.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+btn_submit.pack             (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 
 btn_status_connection.pack      (side=tk.LEFT, anchor=tk.NW)
