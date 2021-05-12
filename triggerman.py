@@ -136,31 +136,35 @@ def update_element (_item, **kwargs):
     for key in kwargs:
         _item[key] = kwargs[key]
 
-def update_trigger_wrapper (_item, _id, **kwargs):
+def update_trigger_wrapper (widget, id, **kwargs):
 
-    orig_color = _item.cget ("background")
+    orig_color = widget.cget ("background")
 
     if 'path' in kwargs:
         _path = open_file ()
         if not (len (_path) == 0):
             kwargs['path'] = _path # set kwargs to actual path
-            _item['text'] = path.basename (_path)
+            widget['text'] = path.basename (_path)
 
     if 'activation_frame' in kwargs:
         try:
             kwargs['activation_frame'] = int (kwargs['activation_frame'])
         except ValueError:
-            _item['bg'] = "red"
-            _item.delete (0, tk.END)
+            widget['bg'] = "red"
+            widget.delete (0, tk.END)
         else:
-            _item['bg'] = "green"
-            update_trigger (id=_id, **kwargs)
+            widget['bg'] = "green"
+            update_trigger (id=id, **kwargs)
         finally:
-            _item.after (FLASH_LENGTH, lambda: update_element (_item, bg=orig_color))
+            widget.after (FLASH_LENGTH, lambda: update_element (widget, bg=orig_color))
+
+    if 'name' in kwargs:
+        widget['bg'] = "green"
+        update_trigger (id=id, **kwargs)
     else:
-        _item['bg'] = "green"
-        update_trigger (id=_id, **kwargs)
-        _item.after (FLASH_LENGTH, lambda: update_element (_item, bg=orig_color))
+        widget['bg'] = "green"
+        update_trigger (id=id, **kwargs)
+        widget.after (FLASH_LENGTH, lambda: update_element (widget, bg=orig_color))
 
 
 def add_list_item (trigger):
@@ -200,18 +204,22 @@ def add_list_item (trigger):
     entry_name.bind     (
         "<Return>",
         lambda a: update_trigger_wrapper (
-            _item=entry_name,
-            _id=trigger.id,
+            widget=entry_name,
+            id=trigger.id,
             name=entry_name.get ()
             )
+        )
+    entry_name.bind     (
+        "<FocusOut>",
+        lambda a: on_entry_name_leave (widget=entry_name, id=trigger.id)
         )
 
     entry_tframe.insert (0, str (trigger.activation_frame))
     entry_tframe.bind   (
         "<Return>",
         lambda a: update_trigger_wrapper (
-            _item=entry_tframe,
-            _id=trigger.id,
+            widget=entry_tframe,
+            id=trigger.id,
             activation_frame=entry_tframe.get ()
             )
     )
@@ -226,6 +234,14 @@ def add_list_item (trigger):
     entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
     trigger_item_list[trigger.id] = lst_item
+
+def on_entry_name_leave (widget=None, id=None):
+    trigger = get_trigger_by_id (id)
+    original_name = trigger.name
+
+    if (original_name != widget.get ()):
+        widget['bg'] = 'red'
+        widget['fg'] = 'white'
 
 def clear_list ():
     for key in trigger_item_list:
