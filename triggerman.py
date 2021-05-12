@@ -155,17 +155,10 @@ def update_trigger_wrapper (widget, id, **kwargs):
         else:
             widget['bg'] = "green"
             update_trigger (id=id, **kwargs)
-        finally:
-            widget.after (FLASH_LENGTH, lambda: update_element (widget, bg=orig_color))
 
     if 'name' in kwargs:
         widget['bg'] = "green"
         update_trigger (id=id, **kwargs)
-    else:
-        widget['bg'] = "green"
-        update_trigger (id=id, **kwargs)
-        widget.after (FLASH_LENGTH, lambda: update_element (widget, bg=orig_color))
-
 
 def add_list_item (trigger):
     global selected_item
@@ -209,7 +202,7 @@ def add_list_item (trigger):
             name=entry_name.get ()
             )
         )
-    entry_name.bind     (
+    entry_name.bind (
         "<FocusOut>",
         lambda a: on_entry_name_leave (widget=entry_name, id=trigger.id)
         )
@@ -223,6 +216,10 @@ def add_list_item (trigger):
             activation_frame=entry_tframe.get ()
             )
     )
+    entry_tframe.bind (
+        "<FocusOut>",
+        lambda a: on_entry_tframe_leave (widget=entry_tframe, id=trigger.id)
+        )
 
     lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
     btn_selected.pack   (side=tk.LEFT, padx=1, pady=1)
@@ -240,6 +237,14 @@ def on_entry_name_leave (widget=None, id=None):
     original_name = trigger.name
 
     if (original_name != widget.get ()):
+        widget['bg'] = 'red'
+        widget['fg'] = 'white'
+
+def on_entry_tframe_leave (widget=None, id=None):
+    trigger = get_trigger_by_id (id)
+    original_tframe = trigger.activation_frame
+
+    if (original_tframe != int(widget.get ())):
         widget['bg'] = 'red'
         widget['fg'] = 'white'
 
