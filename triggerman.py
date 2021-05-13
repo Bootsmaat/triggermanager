@@ -29,6 +29,16 @@ selected_item = tk.IntVar()
 trigger_item_list = {}
 trigger_loop_enabled = 0
 
+string_f     = tk.StringVar ()
+string_i     = tk.StringVar ()
+string_z     = tk.StringVar ()
+string_frame = tk.StringVar ()
+
+string_f.set     ("00000")
+string_i.set     ("00000")
+string_z.set     ("00000")
+string_frame.set ("00000")
+
 conn_options = [
     "IronPi.local",
     "PiTwo.local",
@@ -99,7 +109,7 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None, con
         cm.connect (connection_string)
         cm.send_opc (cm.OP_FD)
         sleep (.1)
-        test = fiz_watcher (connection_string, None, None, None, None)
+        test = fiz_watcher (connection_string, string_f, string_i, string_z, string_frame)
         test.start ()
     except BaseException as e:
         if (error_field):
@@ -317,13 +327,13 @@ btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
 btn_status_connection.configure (command=lambda: connect_wrapper (connect_icon=btn_status_connection))
 btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
 lbl_frame_status_hdr    = tk.Label  (status_bar, text="Fr:", font=font_highlight)
-lbl_frame_status        = tk.Label  (status_bar, text="00000")
+lbl_frame_status        = tk.Label  (status_bar, textvariable=string_frame)
 lbl_focus_status_hdr    = tk.Label  (status_bar, text="F:", font=font_highlight)
-lbl_focus_status        = tk.Label  (status_bar, text="00000")
+lbl_focus_status        = tk.Label  (status_bar, textvariable=string_f)
 lbl_iris_status_hdr     = tk.Label  (status_bar, text="I:", font=font_highlight)
-lbl_iris_status         = tk.Label  (status_bar, text="00000")
+lbl_iris_status         = tk.Label  (status_bar, textvariable=string_i)
 lbl_zoom_status_hdr     = tk.Label  (status_bar, text="Z:", font=font_highlight)
-lbl_zoom_status         = tk.Label  (status_bar, text="00000")
+lbl_zoom_status         = tk.Label  (status_bar, textvariable=string_z)
 
 # control buttons
 btn_add               = tk.Button (root, text="add", command=add_item)
