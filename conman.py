@@ -43,6 +43,7 @@ class Receiver (Thread):
         self.zoom  = 0
     
     def run (self):
+        print ('Receiver: Starting...')
         global trigger_cb
         while (not self.stop == 1):
             if (not self.sock._closed):
@@ -71,6 +72,7 @@ class Receiver (Thread):
                 add = data[1:]
                 e = (opc, add)
                 self.events.append (e)
+        print ('Receiver: Exiting...')
 
     def pop (self):
         if (len (self.events) != 0):
@@ -143,7 +145,7 @@ def connect (addr):
 
     sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect   ((addr, CONF_PORT))
+        sock.connect ((addr, CONF_PORT))
         thr = Receiver (sock)
     except OSError as e:
         print ('OSError raised')

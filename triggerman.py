@@ -6,6 +6,8 @@ from triggers import *
 import conman as cm
 import exman as em
 from saver import save, load
+from fizwatcher import fiz_watcher
+from time import sleep
 
 root = tk.Tk ()
 root.title ("triggerman (V1.0)")
@@ -96,9 +98,13 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None, con
     try:
         cm.connect (connection_string)
         cm.send_opc (cm.OP_FD)
+        sleep (.1)
+        test = fiz_watcher (connection_string, None, None, None, None)
+        test.start ()
     except BaseException as e:
         if (error_field):
             error_field.insert (tk.END, e)
+        raise e
     else:
         connect_icon['image'] = img_icon_green
         if (window):
