@@ -167,6 +167,7 @@ def update_trigger_wrapper (widget, id, **kwargs):
         if not (len (_path) == 0):
             kwargs['path'] = _path # set kwargs to actual path
             widget['text'] = path.basename (_path)
+            update_trigger (id=id, **kwargs)
 
     if 'activation_frame' in kwargs:
         try:
