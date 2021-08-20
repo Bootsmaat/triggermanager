@@ -71,10 +71,10 @@ def open_layout_panel (root):
     combox_zoom     = ttk.Combobox (frame_zoom, values=layout_positions, textvariable=pos_zoom)
     combox_frameNr  = ttk.Combobox (frame_frameNr, values=layout_positions, textvariable=pos_frameNr)
 
-    combox_focus    .current (2)
+    combox_focus    .current (1)
     combox_iris     .current (0)
     combox_zoom     .current (0)
-    combox_frameNr  .current (1)
+    combox_frameNr  .current (2)
 
     frame_focus     .pack (anchor=tk.NW, fill=tk.X)
     frame_iris      .pack (anchor=tk.NW, fill=tk.X)
