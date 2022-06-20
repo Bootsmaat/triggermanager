@@ -51,7 +51,7 @@ conn_options = [
 ]
 # storing the option for which address to connect to
 conn_addr_str = tk.StringVar()
-conn_addr_str.set (conn_options[0])
+conn_addr_str.set (conn_options[-1])
 
 def on_connect_panel_close ():
     root.destroy ()
