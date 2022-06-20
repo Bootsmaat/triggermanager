@@ -14,24 +14,29 @@ OP_TSTART   = 0x7
 OP_TSTOP    = 0x8
 OP_FD       = 0x9
 OP_TCLEAR   = 0xa
+OP_REFRESH  = 0xd
 
 # trigger activation msg code
 TR_A = 0xa
 
 CONF_PORT   = 8081
 BUF_SIZE    = 32
+TIMEOUT     = 1
 
 callbacks   = {}
 sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-cb_i = 0
+cb_i        = 0
+trigger_cb  = lambda a: print ("trigger callback not bound")
+error_cb    = lambda a: print ("error callback not bound")
 
 class Receiver (Thread):
     def __init__ (self, sock):
         Thread.__init__(self)
-        self._stop = 0
-        self._tr_cb = lambda a: "trigger callback not bound"
-        self.events = []
-        self.sock = sock
+        self._stop      = 0
+        self.events     = []
+        self.sock       = sock
+
+        # sock.settimeout (TIMEOUT)
 
         self.frame = 0
         self.focus = 0
@@ -39,9 +44,14 @@ class Receiver (Thread):
         self.zoom  = 0
     
     def run (self):
+        print ('Receiver: Starting...')
+        global trigger_cb
         while (not self.stop == 1):
             if (not self.sock._closed):
-                data = self.sock.recv (1) # read packet length
+                try:
+                    data = self.sock.recv (1) # read packet length
+                except BaseException as e:
+                    error_cb (e)
             else:
                 return
 
@@ -52,7 +62,7 @@ class Receiver (Thread):
 
             if (data[0] == TR_A): # trigger fire message
                 tr_id = (data[1] << 8) | data[2]
-                self._tr_cb (tr_id)
+                trigger_cb (tr_id)
             elif (data[0] == OP_GET):
                 self.frame = (data[1] << 8) | data [2]
                 self.focus = (data[3] << 8) | data [4]
@@ -63,6 +73,7 @@ class Receiver (Thread):
                 add = data[1:]
                 e = (opc, add)
                 self.events.append (e)
+        print ('Receiver: Exiting...')
 
     def pop (self):
         if (len (self.events) != 0):
@@ -78,9 +89,15 @@ class Receiver (Thread):
         while (len (self.events) == 0):
             sleep (.1)
     
-    def register_tr_cb (self, func = None):
-        if (func):
-            self._tr_cb = func
+def register_tr_cb (func = None):
+    global trigger_cb
+    if (func):
+        trigger_cb = func
+
+def register_error_cb (func = None):
+    global error_cb
+    if (func):
+        error_cb = func
 
 thr = Receiver (sock)
 
@@ -110,30 +127,55 @@ def construct_packet (opc, **kwargs):
     return data
 
 def send_opc (opc):
+    global thr
     print ('sending opc: %s' % str(opc))
     data = construct_packet (opc)
     try:
         sock.send (data)
-    except BrokenPipeError:
-        print ("conman: socket broken")
+    except BrokenPipeError as e:
+        error_cb (e)
+        thr.stop ()
+    except ConnectionAbortedError as e:
+        error_cb (e)
+        thr.stop ()
 
 def connect (addr):
     global sock, thr
+    if (not sock._closed):
+        sock.close ()
+
+    sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect   ((addr, CONF_PORT))
-    except OSError:
-        print ('conman: socket already connected')
+        sock.connect ((addr, CONF_PORT))
+        thr = Receiver (sock)
+    except OSError as e:
+        print ('OSError raised')
+        raise e
     else:
+        send_opc (OP_FD)
         thr.start ()
 
 # sends all triggers
 def send_trigger (triggers):
-    global sock
+    global sock, thr
     send_opc (OP_TCLEAR)
     for t in triggers:
         data = construct_packet (OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
-        sock.send (data)
+        try:
+            sock.send (data)
+        except ConnectionAbortedError as e:
+            error_cb (e)
+            thr.stop ()
         sleep (.1)
+
+def send_fiz_config (fiz_string):
+    global sock, thr
+    data = construct_packet (OP_SET, cat_set=fiz_string)
+    try:
+        sock.send (data)
+    except ConnectionAbortedError as e:
+        error_cb (e)
+        thr.stop ()
 
 def bind_id (id, callback = None):
     global callbacks
