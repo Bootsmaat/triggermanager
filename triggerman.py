@@ -53,6 +53,10 @@ conn_options = [
 conn_addr_str = tk.StringVar()
 conn_addr_str.set (conn_options[-1])
 
+def on_refresh_click():
+    print("sending refresh opc")
+    cm.send_opc(cm.OP_REFRESH)
+
 def on_connect_panel_close ():
     root.destroy ()
 
@@ -335,6 +339,10 @@ status_bar              = tk.Frame  (root)
 btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
 btn_status_connection.configure (command=lambda: connect_wrapper (connect_icon=btn_status_connection))
 btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
+
+btn_refresh   = tk.Button (status_bar, text="reconnect USB")
+btn_refresh.configure (command=on_refresh_click)
+
 lbl_frame_status_hdr    = tk.Label  (status_bar, text="Fr:", font=font_highlight)
 lbl_frame_status        = tk.Label  (status_bar, textvariable=string_frame)
 lbl_focus_status_hdr    = tk.Label  (status_bar, text="F:", font=font_highlight)
@@ -383,6 +391,7 @@ btn_shooting.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, pad
 
 btn_status_connection.pack      (side=tk.LEFT, anchor=tk.NW)
 btn_status_shooting.pack        (side=tk.LEFT, anchor=tk.NW)
+btn_refresh.pack                (side=tk.LEFT, anchor=tk.NW)
 lbl_frame_status_hdr.pack       (side=tk.LEFT, anchor=tk.NW)
 lbl_frame_status.pack           (side=tk.LEFT, anchor=tk.NW)
 lbl_focus_status_hdr.pack       (side=tk.LEFT, anchor=tk.NW)
