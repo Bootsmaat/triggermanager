@@ -8,6 +8,8 @@ Triggermanager is written as a front-end for [PiSync](https://github.com/IronJon
 - configuring PiSync settings
 - playing audio / video qeues based on a trigger signal from the PLC.
 
+**Make sure to use the `dev` branch as `master` outdated**
+
 # Dependencies
 
 - Python 3.8 (32 bit)
