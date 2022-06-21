@@ -61,7 +61,7 @@ def open_layout_panel (root):
     frame_zoom          = tk.Frame (window)
     frame_frameNr       = tk.Frame (window)
 
-    lbl_focus       = tk.Label (frame_focus, text="Frame:")
+    lbl_focus       = tk.Label (frame_focus, text="Focus:")
     lbl_iris        = tk.Label (frame_iris, text="Iris:")
     lbl_zoom        = tk.Label (frame_zoom, text="Zoom:")
     lbl_framenumber = tk.Label (frame_frameNr, text="Frame Nr.:")

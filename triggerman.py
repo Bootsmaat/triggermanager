@@ -26,7 +26,7 @@ img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif
 
 # gui globals
 FLASH_LENGTH = 200
-RPI_ADDR = '192.168.1.132'
+RPI_ADDR = '192.168.1.100'
 
 # globals
 btn_submit = None
