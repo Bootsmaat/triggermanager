@@ -26,8 +26,8 @@ TIMEOUT     = 1
 callbacks   = {}
 sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
 cb_i        = 0
-trigger_cb  = lambda a: print ("trigger callback not bound")
-error_cb    = lambda a: print ("error callback not bound")
+trigger_cb  = lambda a: print("trigger callback not bound")
+error_cb    = lambda a: print("error callback not bound")
 
 class Receiver (Thread):
     def __init__ (self, sock):
