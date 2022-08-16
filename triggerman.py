@@ -3,15 +3,18 @@ from tkinter import filedialog, messagebox, scrolledtext, font
 from os import path 
 from pathlib import Path
 from triggers import *
-import conman as cm
+import conman
 # import exman as em
 from saver import save, load
 from fizwatcher import fiz_watcher
 from time import sleep
+import fizprotocol as fp
 
-root = tk.Tk ()
-root.title ("triggerman (V1.0)")
-root.geometry ("650x600")
+root = tk.Tk()
+root.title("triggermanager")
+root.geometry("650x600")
+
+cm = conman.conman()
 
 import fizlayoutpanel
 
@@ -44,15 +47,18 @@ string_i.set     ("00000")
 string_z.set     ("00000")
 string_frame.set ("00000")
 
+# TODO make this read from config file
 conn_options = [
     "IronPi.local",
     "PiTwo.local",
      "Custom..."
 ]
+
 # storing the option for which address to connect to
 conn_addr_str = tk.StringVar()
 conn_addr_str.set (conn_options[-1])
 
+# TODO check if refresh worked
 def on_refresh_click():
     print("sending refresh opc")
     cm.send_opc(cm.OP_REFRESH)
@@ -62,20 +68,19 @@ def on_connect_panel_close ():
 
 def on_root_close ():
     if messagebox.askokcancel ("Quit", "Are you sure?"):
-        cm.sock.close ()
-        cm.thr.stop ()
+        cm.cleanup()
         root.destroy ()
 
 def on_save ():
     print ('on_save: saving...')
-    file = filedialog.asksaveasfilename (defaultextension='.jad') # add some options here
+    file = filedialog.asksaveasfilename (defaultextension='.json') # add some options here
     save (file, trigger_list)
 
 def on_load ():
     global trigger_list
     print ('on_load: loading...')
-    file = filedialog.askopenfilename (filetypes=[('jad files', '.jad')])
-    trigger_data = [trigger_t (*a) for a in load (file)]
+    file = filedialog.askopenfilename (filetypes=[('JSON files', '.json')])
+    trigger_data = [trigger_t(*a) for a in load(file)]
     trigger_list.clear ()
     clear_list ()
 
@@ -91,11 +96,11 @@ def on_stop_playback ():
     # em.stop_video ()
     print ("kill me")
 
-def toggle_trigger_loop (widget = None):
+def toggle_trigger_loop(widget = None):
     global trigger_loop_enabled, cb_i
 
     if trigger_loop_enabled:
-        cm.send_opc (cm.OP_STOP)
+        cm.send_opc(fp.OP_STOP)
         if (widget):
             widget['image'] = img_icon_grey
     else:
@@ -103,7 +108,7 @@ def toggle_trigger_loop (widget = None):
             widget['image'] = img_icon_red
         cb_i = 0 # make sure we start with the first trigger
 
-        cm.send_opc (cm.OP_START)
+        cm.send_opc(fp.OP_START)
     
     trigger_loop_enabled = not trigger_loop_enabled
 
@@ -116,21 +121,21 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None, con
         connection_string = conn_addr_str.get ()
 
     try:
-        cm.connect (connection_string)
-        cm.send_opc (cm.OP_FD)
-        sleep (.1)
-        test = fiz_watcher (connection_string, string_f, string_i, string_z, string_frame)
-        test.start ()
+        cm.connect(connection_string)
+        cm.send_opc(fp.OP_FD)
+        sleep(.1)
+        test = fiz_watcher(connection_string, string_f, string_i, string_z, string_frame)
+        test.start()
     except BaseException as e:
         if (error_field):
-            error_field.insert (tk.END, e)
+            error_field.insert(tk.END, e)
         raise e
     else:
         connect_icon['image'] = img_icon_green
         if (window):
-            window.destroy ()
+            window.destroy()
 
-def send_config ():
+def send_config():
 
     btn_submit['bg'] = 'green'
 
@@ -151,8 +156,8 @@ def send_config ():
     # if (len (v_files) != 0):
     #     em.prep_video_player (v_files[0].path)
 
-    print ('sending list %s' % enabled_triggers)
-    cm.send_trigger (enabled_triggers)
+    print('sending list %s' % enabled_triggers)
+    cm.send_trigger(enabled_triggers)
 
 def open_file ():
     _path = filedialog.askopenfilename (
@@ -164,11 +169,11 @@ def open_file ():
     )
     return _path
 
-def update_element (_item, **kwargs):
+def update_element(_item, **kwargs):
     for key in kwargs:
         _item[key] = kwargs[key]
 
-def update_trigger_wrapper (widget, id, **kwargs):
+def update_trigger_wrapper(widget, id, **kwargs):
 
     btn_submit['bg'] = 'red'
 
@@ -195,11 +200,11 @@ def update_trigger_wrapper (widget, id, **kwargs):
         widget['bg'] = "green"
         update_trigger (id=id, **kwargs)
 
-def add_list_item (trigger):
+def add_list_item(trigger):
     global selected_item
 
-    enabled = tk.IntVar ()
-    enabled.set (trigger.enabled)
+    enabled = tk.IntVar()
+    enabled.set(trigger.enabled)
 
     # root of item
     lst_item        = tk.Frame          (frame_trigger_list)
@@ -267,32 +272,33 @@ def add_list_item (trigger):
 
     trigger_item_list[trigger.id] = lst_item
 
-def on_entry_name_leave (widget=None, id=None):
-    trigger = get_trigger_by_id (id)
+def on_entry_name_leave(widget=None, id=None):
+    trigger = get_trigger_by_id(id)
     original_name = trigger.name
 
-    if (original_name != widget.get ()):
+    if (original_name != widget.get()):
         widget['bg'] = 'red'
 
-def on_entry_tframe_leave (widget=None, id=None):
+def on_entry_tframe_leave(widget=None, id=None):
     trigger = get_trigger_by_id (id)
     original_tframe = trigger.activation_frame
 
     if (original_tframe != int(widget.get ())):
         widget['bg'] = 'red'
 
-def clear_list ():
+def clear_list():
     for key in trigger_item_list:
-        trigger_item_list[key].pack_forget ()
+        trigger_item_list[key].pack_forget()
 
-def remove_item ():
-    selected_id = selected_item.get ()
-    remove_trigger (selected_id)
-    trigger_item_list[selected_id].pack_forget ()
+def remove_item():
+    selected_id = selected_item.get()
+    remove_trigger(selected_id)
+    trigger_item_list[selected_id].pack_forget()
 
-def add_item ():
-    add_trigger ()
-    add_list_item (trigger_list[-1])
+# adds empty trigger and updated list window
+def add_item():
+    add_trigger()
+    add_list_item(trigger_list[-1])
 
 # raised when conman cant send data over socket
 def on_connection_error_event (error, connection_widget):
@@ -415,10 +421,10 @@ address_picker_menu.pack            (anchor=tk.NW)
 entry_custom_connection_string.pack (anchor=tk.NW)
 error_widget.pack                   (anchor=tk.N, padx=5, pady=5)
 
-cm.register_tr_cb (cm.on_fire_trigger)
-cm.register_error_cb (lambda a: on_connection_error_event (a, btn_status_connection))
+cm.register_trigger_callback(cm.on_fire_trigger)
+cm.register_error_callback(lambda a: on_connection_error_event (a, btn_status_connection))
 
-root.config (menu=menubar)
-connect_panel.protocol ("WM_DELETE_WINDOW", on_connect_panel_close)
-root.protocol ("WM_DELETE_WINDOW", on_root_close)
-root.mainloop ()
+root.config(menu=menubar)
+connect_panel.protocol("WM_DELETE_WINDOW", on_connect_panel_close)
+root.protocol("WM_DELETE_WINDOW", on_root_close)
+root.mainloop()

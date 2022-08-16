@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-from conman import send_fiz_config
 
 is_panel_open = False
 
@@ -18,7 +17,7 @@ pos_zoom    = tk.StringVar ()
 pos_frameNr = tk.StringVar ()
 
 # fuck this dumb function, shouldnt be necessary if server can accept a more sane command instead of a string
-def get_fiz_string ():
+def get_fiz_string():
     pos_list = []
 
     try:
@@ -46,8 +45,9 @@ def get_fiz_string ():
     
     return return_string
 
-def on_submit ():
-    send_fiz_config( get_fiz_string () )
+def on_submit():
+    print("function should be replaced with config file")
+    # send_fiz_config(get_fiz_string())
 
 def open_layout_panel (root):
     print ('opens the fiz layout panel')
