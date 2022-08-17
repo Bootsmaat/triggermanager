@@ -5,7 +5,7 @@ from pathlib import Path
 from triggers import *
 import conman
 # import exman as em
-from saver import save, load
+from config import *
 from fizwatcher import fiz_watcher
 from time import sleep
 import fizprotocol as fp
@@ -15,6 +15,8 @@ root.title("triggermanager")
 root.geometry("650x600")
 
 cm = conman.conman()
+cf = configurator()
+config = cf.getConfig()
 
 import fizlayoutpanel
 
@@ -23,13 +25,8 @@ img_icon_grey = tk.PhotoImage (file=path.join ('assets', 'status_icon_grey.gif')
 img_icon_red = tk.PhotoImage (file=path.join ('assets', 'status_icon_red.gif'))
 img_icon_green = tk.PhotoImage (file=path.join ('assets', 'status_icon_green.gif'))
 
-# load settings
-
-# load("settings.json")
-
 # gui globals
 FLASH_LENGTH = 200
-RPI_ADDR = '192.168.1.100'
 
 # globals
 btn_submit = None
@@ -47,16 +44,6 @@ string_i.set     ("00000")
 string_z.set     ("00000")
 string_frame.set ("00000")
 
-# TODO make this read from config file
-conn_options = [
-    "IronPi.local",
-    "PiTwo.local",
-     "Custom..."
-]
-
-# storing the option for which address to connect to
-conn_addr_str = tk.StringVar()
-conn_addr_str.set (conn_options[-1])
 
 # TODO check if refresh worked
 def on_refresh_click():
@@ -113,13 +100,12 @@ def toggle_trigger_loop(widget = None):
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper (window = None, error_field = None, connect_icon = None, connection_string_widget = None):
-    connection_string = None
+def connect_wrapper(window = None, error_field = None, connect_icon = None, connection_string_widget = None):
 
-    if (conn_addr_str.get () == conn_options[-1]):
-        connection_string = entry_custom_connection_string.get ()
-    else:
-        connection_string = conn_addr_str.get ()
+    connection_string = entry_connection_string.get()
+    if (connection_string != config['rpi_addr']):
+        # store address if it's modified
+        config['rpi_addr'] = connection_string
 
     try:
         cm.connect(connection_string)
@@ -129,6 +115,7 @@ def connect_wrapper (window = None, error_field = None, connect_icon = None, con
         test.start()
     except BaseException as e:
         if (error_field):
+            error_field.insert(tk.END, '\n')
             error_field.insert(tk.END, e)
         raise e
     else:
@@ -378,13 +365,11 @@ connect_panel.attributes    ("-topmost", True)
 connect_panel.grab_set      ()
 connect_panel.geometry      ("365x345")
 
-address_picker_menu = tk.OptionMenu (connect_panel, conn_addr_str, *conn_options)
-
 error_widget = scrolledtext.ScrolledText (connect_panel)
 error_widget.bind                        ("<Key>", lambda e:"break")
 
-entry_custom_connection_string = tk.Entry (connect_panel)
-entry_custom_connection_string.insert (0, 'custom IP...')
+entry_connection_string = tk.Entry(connect_panel)
+entry_connection_string.insert (0, config['rpi_addr'])
 
 # packing
 status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
@@ -408,19 +393,17 @@ lbl_iris_status.pack            (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status.pack            (side=tk.LEFT, anchor=tk.NW)
 
-btn_connect = tk.Button     (connect_panel, text="connect", 
+btn_connect = tk.Button(connect_panel, text="connect", 
+    command=lambda: connect_wrapper (
+        window=connect_panel,
+        error_field=error_widget,
+        connect_icon=btn_status_connection,
+        connection_string_widget=entry_connection_string
+        ))
 
-command=lambda: connect_wrapper (
-    window=connect_panel,
-    error_field=error_widget,
-    connect_icon=btn_status_connection,
-    connection_string_widget=entry_custom_connection_string
-    ))
-
-btn_connect.pack                    (anchor=tk.NW)
-address_picker_menu.pack            (anchor=tk.NW)
-entry_custom_connection_string.pack (anchor=tk.NW)
-error_widget.pack                   (anchor=tk.N, padx=5, pady=5)
+entry_connection_string.pack        (ipady=5, fill='x')
+btn_connect.pack                    (ipady=5, fill='x')
+error_widget.pack                   (expand=True, fill='both')
 
 cm.register_trigger_callback(cm.on_fire_trigger)
 cm.register_error_callback(lambda a: on_connection_error_event (a, btn_status_connection))
