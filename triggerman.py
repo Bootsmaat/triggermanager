@@ -61,7 +61,7 @@ conn_addr_str.set (conn_options[-1])
 # TODO check if refresh worked
 def on_refresh_click():
     print("sending refresh opc")
-    cm.send_opc(cm.OP_REFRESH)
+    cm.send_opc(fp.OP_REFRESH)
 
 def on_connect_panel_close ():
     root.destroy ()
@@ -69,6 +69,7 @@ def on_connect_panel_close ():
 def on_root_close ():
     if messagebox.askokcancel ("Quit", "Are you sure?"):
         cm.cleanup()
+        sleep(.1)
         root.destroy ()
 
 def on_save ():
@@ -140,8 +141,8 @@ def send_config():
     btn_submit['bg'] = 'green'
 
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
-    a_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.wav')]
-    v_files             = [a for a in enabled_triggers if (Path (a.path).suffix == '.mp4')]
+    a_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.wav')]
+    v_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.mp4')]
     # ONLY BINDS .mp4 VID FILES TO PLAY!
     
     for a in a_files:

@@ -14,8 +14,8 @@ class conman():
         self.thr = receiver.Receiver()
 
     def cleanup(self):
-        self.sock.close()
         self.thr.stop()
+        self.sock.close()
 
     def register_trigger_callback (self, func):
         self.thr.trigger_cb = func
@@ -48,8 +48,11 @@ class conman():
             self.sock.close()
 
         try:
+            self.sock.close()
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((addr, CONF_PORT))
-            self.thr = self.receiver.Receiver(self.sock)
+            self.thr = receiver.Receiver()
+            self.thr.setSocket(self.sock)
         except OSError as e:
             print('OSError raised')
             raise e
