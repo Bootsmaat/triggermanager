@@ -4,7 +4,7 @@ from conman import TR_A, OP_GET
 
 # thread to receive 
 class Receiver (Thread):
-    def __init__ (self):
+    def __init__ (self, trigger_cb = None, error_cb = None, generic_cb = None):
         Thread.__init__(self)
         self._stop      = 0
         self.events     = []
@@ -14,9 +14,9 @@ class Receiver (Thread):
         self.iris  = 0
         self.zoom  = 0
 
-        self.trigger_cb  = lambda a: print("trigger callback not bound")
-        self.error_cb    = lambda a: print("error callback not bound")
-        self.generic_event_cb = lambda a: print("general event callback not bound")
+        self.trigger_cb  = trigger_cb
+        self.error_cb    = error_cb
+        self.generic_event_cb = generic_cb
 
     def setSocket(self, socket):
         self.sock = socket
@@ -50,7 +50,13 @@ class Receiver (Thread):
                 opc = data[0]
                 add = data[1:]
                 e = (opc, add)
-                self.generic_event_cb(e)
+                try:
+                    self.generic_event_cb(e)
+                except BaseException as p:
+                    print('no generic callback set')
+                    print(p)
+                    return
+
                 self.events.append(e)
 
         print ('Receiver: Exiting...')

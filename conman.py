@@ -11,19 +11,19 @@ class conman():
         self.callbacks = {}
         self.cb_i = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.thr = receiver.Receiver()
+        self.thr = receiver.Receiver(self.on_fire_trigger)
 
     def cleanup(self):
         self.thr.stop()
         self.sock.close()
 
-    def register_trigger_callback (self, func):
+    def bind_trigger_callback (self, func):
         self.thr.trigger_cb = func
 
-    def register_error_callback (self, func):
+    def bind_error_callback (self, func):
         self.thr.error_cb = func
 
-    def register_generic_callback (self, func):
+    def bind_generic_callback (self, func):
         self.thr.generic_event_cb = func
 
     def send_opc(self, opc):
@@ -44,14 +44,10 @@ class conman():
             return e
 
     def connect(self, addr):
-        if (not self.sock._closed):
-            self.sock.close()
-
         try:
             self.sock.close()
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((addr, CONF_PORT))
-            self.thr = receiver.Receiver()
             self.thr.setSocket(self.sock)
         except OSError as e:
             print('OSError raised')

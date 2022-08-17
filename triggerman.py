@@ -15,6 +15,7 @@ root.title("triggermanager")
 root.geometry("650x600")
 
 cm = conman.conman()
+
 cf = configurator()
 config = cf.getConfig()
 
@@ -100,21 +101,27 @@ def toggle_trigger_loop(widget = None):
     
     trigger_loop_enabled = not trigger_loop_enabled
 
-def connect_wrapper(window = None, error_field = None, connect_icon = None, connection_string_widget = None):
+def connect_wrapper(window = None, error_field = None, connect_icon = None, entry_connection_string = None):
+    global cm
 
     connection_string = entry_connection_string.get()
+
+    # store address if it's modified
     if (connection_string != config['rpi_addr']):
-        # store address if it's modified
         config['rpi_addr'] = connection_string
 
     try:
+        cm = conman.conman()
+
         cm.connect(connection_string)
-        cm.send_opc(fp.OP_FD)
+        cm.bind_error_callback(lambda a: on_connection_error_event (a, btn_status_connection))
+
         sleep(.1)
-        test = fiz_watcher(connection_string, string_f, string_i, string_z, string_frame)
-        test.start()
-        sleep(.1)
+        fizWatcher = fiz_watcher(connection_string, string_f, string_i, string_z, string_frame)
+        fizWatcher.start()
+
         cm.send_fiz_config(config['fiz_layout'])
+
     except BaseException as e:
         if (error_field):
             error_field.insert(tk.END, '\n')
@@ -294,6 +301,35 @@ def add_item():
 def on_connection_error_event (error, connection_widget):
     connection_widget['image'] = img_icon_grey
 
+def spawnConnectionPanel():
+    connect_panel = tk.Toplevel (root)
+    connect_panel.title         ("connect")
+    connect_panel.attributes    ("-topmost", True)
+    connect_panel.grab_set      ()
+    connect_panel.geometry      ("365x345")
+
+    error_widget = scrolledtext.ScrolledText (connect_panel)
+    error_widget.bind                        ("<Key>", lambda e:"break")
+
+    _entry_connection_string = tk.Entry(connect_panel)
+    _entry_connection_string.insert (0, config['rpi_addr'])
+
+    btn_connect = tk.Button(connect_panel, text="connect", 
+        command=lambda: connect_wrapper (
+            window=connect_panel,
+            error_field=error_widget,
+            connect_icon=btn_status_connection,
+            entry_connection_string=_entry_connection_string
+    ))
+
+    _entry_connection_string.pack        (ipady=5, fill='x')
+    btn_connect.pack                    (ipady=5, fill='x')
+    error_widget.pack                   (expand=True, fill='both')
+
+    connect_panel.protocol("WM_DELETE_WINDOW", on_connect_panel_close)
+
+    return (connect_panel, error_widget, _entry_connection_string)
+
 # Setup scroll frame
 
 container           = tk.Frame      (root)
@@ -330,10 +366,13 @@ menubar.add_cascade     (label='Configuration', menu=config_menu)
 
 font_highlight = font.Font (weight='bold', slant='italic')
 
+
 # status bar 
 status_bar              = tk.Frame  (root)
 btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
-btn_status_connection.configure (command=lambda: connect_wrapper (connect_icon=btn_status_connection))
+
+btn_status_connection.configure(command=spawnConnectionPanel)
+
 btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
 
 btn_refresh   = tk.Button (status_bar, text="reconnect USB")
@@ -361,17 +400,8 @@ btn_submit            = tk.Button (
 btn_shooting          = tk.Button (root, text="shoot", command=lambda: toggle_trigger_loop (btn_status_shooting))
 
 # connect panel
-connect_panel = tk.Toplevel (root)
-connect_panel.title         ("connect")
-connect_panel.attributes    ("-topmost", True)
-connect_panel.grab_set      ()
-connect_panel.geometry      ("365x345")
 
-error_widget = scrolledtext.ScrolledText (connect_panel)
-error_widget.bind                        ("<Key>", lambda e:"break")
-
-entry_connection_string = tk.Entry(connect_panel)
-entry_connection_string.insert (0, config['rpi_addr'])
+spawnConnectionPanel()
 
 # packing
 status_bar.pack             (fill=tk.BOTH, anchor=tk.N, side=tk.TOP)
@@ -395,22 +425,6 @@ lbl_iris_status.pack            (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status_hdr.pack        (side=tk.LEFT, anchor=tk.NW)
 lbl_zoom_status.pack            (side=tk.LEFT, anchor=tk.NW)
 
-btn_connect = tk.Button(connect_panel, text="connect", 
-    command=lambda: connect_wrapper (
-        window=connect_panel,
-        error_field=error_widget,
-        connect_icon=btn_status_connection,
-        connection_string_widget=entry_connection_string
-        ))
-
-entry_connection_string.pack        (ipady=5, fill='x')
-btn_connect.pack                    (ipady=5, fill='x')
-error_widget.pack                   (expand=True, fill='both')
-
-cm.register_trigger_callback(cm.on_fire_trigger)
-cm.register_error_callback(lambda a: on_connection_error_event (a, btn_status_connection))
-
 root.config(menu=menubar)
-connect_panel.protocol("WM_DELETE_WINDOW", on_connect_panel_close)
 root.protocol("WM_DELETE_WINDOW", on_root_close)
 root.mainloop()
