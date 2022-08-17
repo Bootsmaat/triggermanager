@@ -20,7 +20,6 @@ class Receiver (Thread):
 
     def setSocket(self, socket):
         self.sock = socket
-
     
     def run (self):
         print ('Receiver: Starting...')

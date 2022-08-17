@@ -113,6 +113,8 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, conn
         sleep(.1)
         test = fiz_watcher(connection_string, string_f, string_i, string_z, string_frame)
         test.start()
+        sleep(.1)
+        cm.send_fiz_config(config['fiz_layout'])
     except BaseException as e:
         if (error_field):
             error_field.insert(tk.END, '\n')
@@ -323,7 +325,7 @@ videomenu.add_command   (label='open playback window', command=on_open_playback)
 videomenu.add_command   (label='stop video', command=on_stop_playback)
 menubar.add_cascade     (label='Video', menu=videomenu)
 
-config_menu.add_command (label='FIZ Layout', command=lambda: fizlayoutpanel.open_layout_panel(root))
+config_menu.add_command (label='FIZ Layout', command=lambda: fizlayoutpanel.open_layout_panel(root, config, cm))
 menubar.add_cascade     (label='Configuration', menu=config_menu)
 
 font_highlight = font.Font (weight='bold', slant='italic')
