@@ -49,7 +49,11 @@ string_frame.set ("00000")
 # TODO check if refresh worked
 def on_refresh_click():
     print("sending refresh opc")
-    cm.send_opc(fp.OP_REFRESH)
+    try:
+        cm.send_opc(fp.OP_REFRESH)
+    except ConnectionAbortedError as e:
+        on_connection_error_event(e, btn_status_connection)
+
 
 def on_connect_panel_close ():
     root.destroy ()
@@ -103,6 +107,8 @@ def toggle_trigger_loop(widget = None):
 
 def connect_wrapper(window = None, error_field = None, connect_icon = None, entry_connection_string = None):
     global cm
+
+    cm.cleanup()
 
     connection_string = entry_connection_string.get()
 
@@ -308,14 +314,14 @@ def spawnConnectionPanel():
     connect_panel.grab_set      ()
     connect_panel.geometry      ("365x345")
 
-    error_widget = scrolledtext.ScrolledText (connect_panel)
-    error_widget.bind                        ("<Key>", lambda e:"break")
+    error_widget = scrolledtext.ScrolledText(connect_panel)
+    error_widget.bind("<Key>", lambda e:"break")
 
     _entry_connection_string = tk.Entry(connect_panel)
-    _entry_connection_string.insert (0, config['rpi_addr'])
+    _entry_connection_string.insert(0, config['rpi_addr'])
 
     btn_connect = tk.Button(connect_panel, text="connect", 
-        command=lambda: connect_wrapper (
+        command=lambda: connect_wrapper(
             window=connect_panel,
             error_field=error_widget,
             connect_icon=btn_status_connection,
@@ -323,8 +329,8 @@ def spawnConnectionPanel():
     ))
 
     _entry_connection_string.pack        (ipady=5, fill='x')
-    btn_connect.pack                    (ipady=5, fill='x')
-    error_widget.pack                   (expand=True, fill='both')
+    btn_connect.pack                     (ipady=5, fill='x')
+    error_widget.pack                    (expand=True, fill='both')
 
     connect_panel.protocol("WM_DELETE_WINDOW", on_connect_panel_close)
 

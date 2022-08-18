@@ -33,6 +33,12 @@ class fiz_watcher (Thread):
             except BaseException as e:
                 print ('fiz_watcher: error on recv. e = %s' % e)
                 self.stop = True
+                raise e
+
+            # skip loop if no data is received
+            # TODO raise disconnect callback
+            if (len(data) == 0):
+                return
             
             data_length = data[0] - 1
             data = self.socket.recv (data_length)

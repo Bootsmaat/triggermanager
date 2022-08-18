@@ -29,6 +29,8 @@ class Receiver (Thread):
                     data = self.sock.recv (1) # read packet length
                 except BaseException as e:
                     self.error_cb(e)
+                    self.stop()
+                    raise e
             else:
                 return
 

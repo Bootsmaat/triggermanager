@@ -36,12 +36,12 @@ class conman():
         except BrokenPipeError as e:
             print("conman: BrokenPipeError")
             self.thr.stop()
-            return e
+            raise e
 
         except ConnectionAbortedError as e:
             print("conman: ConnectionAbortedError")
             self.thr.stop()
-            return e
+            raise e
 
     def connect(self, addr):
         try:
