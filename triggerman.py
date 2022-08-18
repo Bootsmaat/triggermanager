@@ -379,31 +379,34 @@ btn_status_connection   = tk.Button (status_bar, image=img_icon_grey)
 
 btn_status_connection.configure(command=spawnConnectionPanel)
 
-btn_status_shooting     = tk.Button (status_bar, image=img_icon_grey)
+btn_status_shooting     = tk.Button(status_bar, image=img_icon_grey)
 
-btn_refresh   = tk.Button (status_bar, text="reconnect USB")
-btn_refresh.configure (command=on_refresh_click)
+btn_refresh   = tk.Button(status_bar, text="reconnect USB")
+btn_refresh.configure(command=on_refresh_click)
 
-lbl_frame_status_hdr    = tk.Label  (status_bar, text="Fr:", font=font_highlight)
-lbl_frame_status        = tk.Label  (status_bar, textvariable=string_frame)
-lbl_focus_status_hdr    = tk.Label  (status_bar, text="F:", font=font_highlight)
-lbl_focus_status        = tk.Label  (status_bar, textvariable=string_f)
-lbl_iris_status_hdr     = tk.Label  (status_bar, text="I:", font=font_highlight)
-lbl_iris_status         = tk.Label  (status_bar, textvariable=string_i)
-lbl_zoom_status_hdr     = tk.Label  (status_bar, text="Z:", font=font_highlight)
-lbl_zoom_status         = tk.Label  (status_bar, textvariable=string_z)
+lbl_frame_status_hdr    = tk.Label(status_bar, text="Fr:", font=font_highlight)
+lbl_frame_status        = tk.Label(status_bar, textvariable=string_frame)
+lbl_focus_status_hdr    = tk.Label(status_bar, text="F:", font=font_highlight)
+lbl_focus_status        = tk.Label(status_bar, textvariable=string_f)
+lbl_iris_status_hdr     = tk.Label(status_bar, text="I:", font=font_highlight)
+lbl_iris_status         = tk.Label(status_bar, textvariable=string_i)
+lbl_zoom_status_hdr     = tk.Label(status_bar, text="Z:", font=font_highlight)
+lbl_zoom_status         = tk.Label(status_bar, textvariable=string_z)
 
 # control buttons
-btn_add               = tk.Button (root, text="add", command=add_item)
-btn_remove            = tk.Button (root, text="remove", bg="red", command=remove_item)
-btn_submit            = tk.Button (
+btn_add               = tk.Button(root, text="add", command=add_item)
+btn_remove            = tk.Button(root, text="remove", bg="red", command=remove_item)
+btn_submit            = tk.Button(
                                     root,
                                     text="send to pi",
                                     fg='white',
                                     bg='red',
                                     command=send_config
                                 )
-btn_shooting          = tk.Button (root, text="shoot", command=lambda: toggle_trigger_loop (btn_status_shooting))
+btn_shooting          = tk.Button(root, text="shoot", command=lambda: toggle_trigger_loop(btn_status_shooting))
+
+# TODO replace with polling thread
+btn_test = tk.Button(root, text="GET STATUS", command=lambda: cm.send_opc(fp.OP_STATUS))
 
 # connect panel
 
@@ -418,6 +421,7 @@ btn_add.pack                (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx
 btn_remove.pack             (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_submit.pack             (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
+btn_test.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 
 btn_status_connection.pack      (side=tk.LEFT, anchor=tk.NW)
 btn_status_shooting.pack        (side=tk.LEFT, anchor=tk.NW)

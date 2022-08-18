@@ -12,6 +12,7 @@ OP_TSTOP    = 0x8
 OP_FD       = 0x9
 OP_TCLEAR   = 0xa
 OP_REFRESH  = 0xd
+OP_STATUS   = 0xe
 
 # trigger activation msg code
 TR_A = 0xa

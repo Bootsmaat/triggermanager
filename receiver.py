@@ -1,6 +1,7 @@
 from time import sleep
 from threading import Thread
 from conman import TR_A, OP_GET
+from fizprotocol import OP_STATUS
 
 # thread to receive 
 class Receiver (Thread):
@@ -23,6 +24,10 @@ class Receiver (Thread):
     
     def run (self):
         print ('Receiver: Starting...')
+
+        # read initial message
+        initial_state = self.sock.recv(3)
+
         while (not self._stop):
             if (not self.sock._closed):
                 try:
@@ -35,7 +40,7 @@ class Receiver (Thread):
                 return
 
             if (len (data) == 0):
-                break
+                return
 
             _len = data[0] - 1
             data = self.sock.recv(_len) # read rest of packet
@@ -48,6 +53,8 @@ class Receiver (Thread):
                 self.focus = (data[3] << 8) | data [4]
                 self.iris  = (data[5] << 8) | data [6]
                 self.zoom  = (data[7] << 8) | data [8]
+            elif(data[0] == OP_STATUS):
+                print(data)
             else:
                 opc = data[0]
                 add = data[1:]
@@ -57,7 +64,7 @@ class Receiver (Thread):
                 except BaseException as p:
                     print('no generic callback set')
                     print(p)
-                    return
+                    raise
 
                 self.events.append(e)
 
