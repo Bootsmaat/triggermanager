@@ -108,6 +108,7 @@ def toggle_trigger_loop(widget = None):
 def connect_wrapper(window = None, error_field = None, connect_icon = None, entry_connection_string = None):
     global cm
 
+    # TODO make this not run the first time so thread.join doesn't raise an exception
     cm.cleanup()
 
     connection_string = entry_connection_string.get()
@@ -117,10 +118,12 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
         config['rpi_addr'] = connection_string
 
     try:
-        cm = conman.conman()
+        cm = conman.conman(
+            generic_cb= lambda a: print(f'{a} received'),
+            conn_error_cb= lambda a: on_connection_error_event (a, btn_status_connection)
+        )
 
         cm.connect(connection_string)
-        cm.bind_error_callback(lambda a: on_connection_error_event (a, btn_status_connection))
 
         sleep(.1)
         fizWatcher = fiz_watcher(connection_string, string_f, string_i, string_z, string_frame)

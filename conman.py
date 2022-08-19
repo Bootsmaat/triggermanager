@@ -3,6 +3,9 @@ import receiver
 import socket, sys, threading, struct
 from time import sleep
 
+# interval between status polls in s
+POLL_TIMEOUT = 2
+
 
 # class representing connection to pisync
 # hold object receiver which asyncronally gets the response 
@@ -10,13 +13,14 @@ class conman():
     def __init__(
         self,
         conn_error_cb = None, 
-        generic_cb = lambda a: print(f'{a} received')
+        generic_cb = None
     ) -> None:
 
         self.callbacks = {}
         self.cb_i = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.rec = receiver.Receiver(self.on_fire_trigger)
+        self.lock = threading.Lock()
 
         # store callbacks to bind later
         self.bind_error_callback(conn_error_cb)
@@ -24,6 +28,13 @@ class conman():
 
     def cleanup(self):
         self.rec.stop()
+
+        # TODO fix
+        try:
+            self.rec.join()
+        except RuntimeError:
+            print("trying to close thread but not open yet")
+
         self.sock.close()
 
     def bind_trigger_callback (self, func):
@@ -40,7 +51,9 @@ class conman():
         data = construct_packet(opc)
 
         try:
+            self.lock.acquire()
             self.sock.send(data)
+            self.lock.release()
 
         except BrokenPipeError as e:
             print("conman: BrokenPipeError")
@@ -58,6 +71,21 @@ class conman():
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((addr, CONF_PORT))
             self.rec.setSocket(self.sock)
+
+            def poll_status(conn, mutex):
+
+                # TODO  use mutex, 
+                #       loop sensibly
+                #       have exit condition (with signal?)
+                #       catch connection errors
+
+                while(True):
+                    conn.send_opc(OP_STATUS)
+                    sleep(POLL_TIMEOUT)
+
+            status_poller = threading.Thread(target=lambda : poll_status(self, None))
+            status_poller.start()
+
         except OSError as e:
             print('OSError raised')
             raise e
@@ -72,7 +100,9 @@ class conman():
         for t in triggers:
             data = construct_packet(OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
             try:
+                self.lock.acquire()
                 self.sock.send(data)
+                self.lock.release()
             except ConnectionAbortedError as e:
                 print("conman: ConnectionAbortedError")
                 self.rec.stop()
@@ -82,7 +112,9 @@ class conman():
     def send_fiz_config(self, fiz_string):
         data = construct_packet(OP_SET, cat_set=fiz_string)
         try:
+            self.lock.acquire()
             self.sock.send(data)
+            self.lock.release()
         except ConnectionAbortedError as e:
             print("conman: ConnectionAbortedError")
             self.rec.stop()
