@@ -26,6 +26,7 @@ class conman():
 
         self.lock = threading.Lock()
         self.stop_signal = threading.Event()
+        self.send_signal = threading.Event()
 
         # store callbacks to bind later
         self.bind_error_callback(conn_error_cb)
@@ -90,17 +91,22 @@ class conman():
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((addr, CONF_PORT))
             self.receiver.setSocket(self.sock)
+            self.send_signal.set()
 
-            def poll_status(conn, stop_signal):
+            def poll_status(conn, stop_signal, send_signal):
                 while(True):
-                    conn.send_opc(OP_STATUS)
+                    if (send_signal.is_set()):
+                        conn.send_opc(OP_STATUS)
+
                     sleep(POLL_TIMEOUT)
 
                     if (stop_signal.is_set()):
                         return
 
             self.stop_signal.clear()
-            self.status_poller = threading.Thread(name='status_poller', target=lambda : poll_status(self, self.stop_signal))
+            self.status_poller = threading.Thread(
+                name='status_poller', 
+                target=lambda : poll_status(self, self.stop_signal, self.send_signal))
             self.status_poller.start()
 
         except OSError as e:

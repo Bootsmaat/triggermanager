@@ -51,17 +51,19 @@ def on_refresh_click():
     print("sending refresh opc")
     try:
         cm.send_opc(fp.OP_REFRESH)
+        sleep(.1)
+        cm.send_opc(fp.OP_STATUS)
     except ConnectionAbortedError as e:
         on_connection_error_event(e, btn_status_connection)
 
 def on_connect_panel_close ():
-    root.destroy ()
+    root.destroy()
 
 def on_root_close ():
-    if messagebox.askokcancel ("Quit", "Are you sure?"):
+    if messagebox.askokcancel("Quit", "Are you sure?"):
         cm.cleanup()
         sleep(.1)
-        root.destroy ()
+        root.destroy()
 
 def on_save ():
     print ('on_save: saving...')
@@ -92,6 +94,7 @@ def toggle_trigger_loop(widget = None):
     global trigger_loop_enabled, cb_i
 
     if trigger_loop_enabled:
+        cm.send_signal.clear()
         cm.send_opc(fp.OP_STOP)
         if (widget):
             widget['image'] = img_icon_grey
@@ -100,6 +103,7 @@ def toggle_trigger_loop(widget = None):
             widget['image'] = img_icon_red
         cb_i = 0 # make sure we start with the first trigger
 
+        cm.send_signal.clear()
         cm.send_opc(fp.OP_START)
     
     trigger_loop_enabled = not trigger_loop_enabled
