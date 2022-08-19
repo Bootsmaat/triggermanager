@@ -20,18 +20,29 @@ class conman():
         self.cb_i = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.rec = receiver.Receiver(self.on_fire_trigger)
+        
+        self.error_cb = conn_error_cb
+
         self.lock = threading.Lock()
+        self.stop_signal = threading.Event()
 
         # store callbacks to bind later
         self.bind_error_callback(conn_error_cb)
         self.bind_generic_callback(generic_cb)
 
+    def __del__(self):
+        print("cleaning up conman")
+        self.cleanup()
+
     def cleanup(self):
+        # TODO maybe have receiver listen to the same stop signal
         self.rec.stop()
+        self.stop_signal.set()
 
         # TODO fix
         try:
             self.rec.join()
+            self.status_poller.join()
         except RuntimeError:
             print("trying to close thread but not open yet")
 
@@ -58,12 +69,18 @@ class conman():
         except BrokenPipeError as e:
             print("conman: BrokenPipeError")
             self.rec.stop()
+            self.lock.release()
+            self.stop_signal.set()
+            self.error_cb(e)
             raise e
 
         except ConnectionAbortedError as e:
             print("conman: ConnectionAbortedError")
             self.rec.stop()
-            raise e
+            self.lock.release()
+            self.stop_signal.set()
+            self.error_cb(e)
+            # raise e
 
     def connect(self, addr):
         try:
@@ -72,19 +89,21 @@ class conman():
             self.sock.connect((addr, CONF_PORT))
             self.rec.setSocket(self.sock)
 
-            def poll_status(conn, mutex):
+            def poll_status(conn, stop_signal):
 
-                # TODO  use mutex, 
-                #       loop sensibly
-                #       have exit condition (with signal?)
+                # TODO  
                 #       catch connection errors
 
                 while(True):
                     conn.send_opc(OP_STATUS)
                     sleep(POLL_TIMEOUT)
 
-            status_poller = threading.Thread(target=lambda : poll_status(self, None))
-            status_poller.start()
+                    if (stop_signal.is_set()):
+                        return
+
+            self.stop_signal.clear()
+            self.status_poller = threading.Thread(name='status_poller', target=lambda : poll_status(self, self.stop_signal))
+            self.status_poller.start()
 
         except OSError as e:
             print('OSError raised')

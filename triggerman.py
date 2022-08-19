@@ -54,7 +54,6 @@ def on_refresh_click():
     except ConnectionAbortedError as e:
         on_connection_error_event(e, btn_status_connection)
 
-
 def on_connect_panel_close ():
     root.destroy ()
 
@@ -109,7 +108,7 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
     global cm
 
     # TODO make this not run the first time so thread.join doesn't raise an exception
-    cm.cleanup()
+    # cm.cleanup()
 
     connection_string = entry_connection_string.get()
 
@@ -120,7 +119,7 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
     try:
         cm = conman.conman(
             generic_cb= lambda a: print(f'{a} received'),
-            conn_error_cb= lambda a: on_connection_error_event (a, btn_status_connection)
+            conn_error_cb= lambda a: on_connection_error_event(a, btn_status_connection)
         )
 
         cm.connect(connection_string)
