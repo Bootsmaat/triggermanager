@@ -7,15 +7,20 @@ from time import sleep
 # class representing connection to pisync
 # hold object receiver which asyncronally gets the response 
 class conman():
-    def __init__(self, conn_error_cb = None, generic_cb = None) -> None:
+    def __init__(
+        self,
+        conn_error_cb = None, 
+        generic_cb = lambda a: print(f'{a} received')
+    ) -> None:
+
         self.callbacks = {}
         self.cb_i = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.rec = receiver.Receiver(self.on_fire_trigger)
 
         # store callbacks to bind later
-        self.conn_error_cb = conn_error_cb
-        self.generic_cb = generic_cb
+        self.bind_error_callback(conn_error_cb)
+        self.bind_generic_callback(generic_cb)
 
     def cleanup(self):
         self.rec.stop()
