@@ -104,6 +104,9 @@ def toggle_trigger_loop(widget = None):
     
     trigger_loop_enabled = not trigger_loop_enabled
 
+def on_status_update(status):
+    btn_refresh['bg'] = 'green' if status[0] else 'red'
+
 def connect_wrapper(window = None, error_field = None, connect_icon = None, entry_connection_string = None):
     global cm
 
@@ -119,7 +122,8 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
     try:
         cm = conman.conman(
             generic_cb= lambda a: print(f'{a} received'),
-            conn_error_cb= lambda a: on_connection_error_event(a, btn_status_connection)
+            conn_error_cb= lambda a: on_connection_error_event(a, btn_status_connection),
+            status_update_cb= lambda a: on_status_update(a)
         )
 
         cm.connect(connection_string)

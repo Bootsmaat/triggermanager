@@ -4,7 +4,7 @@ import socket, sys, threading, struct
 from time import sleep
 
 # interval between status polls in s
-POLL_TIMEOUT = 2
+POLL_TIMEOUT = 4
 
 
 # class representing connection to pisync
@@ -13,13 +13,14 @@ class conman():
     def __init__(
         self,
         conn_error_cb = None, 
-        generic_cb = None
+        generic_cb = None,
+        status_update_cb = None
     ) -> None:
 
         self.callbacks = {}
         self.cb_i = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.rec = receiver.Receiver(self.on_fire_trigger)
+        self.receiver = receiver.Receiver(self.on_fire_trigger)
         
         self.error_cb = conn_error_cb
 
@@ -29,6 +30,7 @@ class conman():
         # store callbacks to bind later
         self.bind_error_callback(conn_error_cb)
         self.bind_generic_callback(generic_cb)
+        self.receiver.status_update_cb = status_update_cb
 
     def __del__(self):
         print("cleaning up conman")
@@ -36,12 +38,12 @@ class conman():
 
     def cleanup(self):
         # TODO maybe have receiver listen to the same stop signal
-        self.rec.stop()
+        self.receiver.stop()
         self.stop_signal.set()
 
         # TODO fix
         try:
-            self.rec.join()
+            self.receiver.join()
             self.status_poller.join()
         except RuntimeError:
             print("trying to close thread but not open yet")
@@ -49,13 +51,13 @@ class conman():
         self.sock.close()
 
     def bind_trigger_callback (self, func):
-        self.rec.trigger_cb = func
+        self.receiver.trigger_cb = func
 
     def bind_error_callback (self, func):
-        self.rec.error_cb = func
+        self.receiver.error_cb = func
 
     def bind_generic_callback (self, func):
-        self.rec.generic_event_cb = func
+        self.receiver.generic_event_cb = func
 
     def send_opc(self, opc):
         print('sending opc: %s' % str(opc))
@@ -68,7 +70,7 @@ class conman():
 
         except BrokenPipeError as e:
             print("conman: BrokenPipeError")
-            self.rec.stop()
+            self.receiver.stop()
             self.lock.release()
             self.stop_signal.set()
             self.error_cb(e)
@@ -76,7 +78,7 @@ class conman():
 
         except ConnectionAbortedError as e:
             print("conman: ConnectionAbortedError")
-            self.rec.stop()
+            self.receiver.stop()
             self.lock.release()
             self.stop_signal.set()
             self.error_cb(e)
@@ -87,13 +89,9 @@ class conman():
             self.sock.close()
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((addr, CONF_PORT))
-            self.rec.setSocket(self.sock)
+            self.receiver.setSocket(self.sock)
 
             def poll_status(conn, stop_signal):
-
-                # TODO  
-                #       catch connection errors
-
                 while(True):
                     conn.send_opc(OP_STATUS)
                     sleep(POLL_TIMEOUT)
@@ -110,7 +108,7 @@ class conman():
             raise e
         else:
             self.send_opc(OP_FD)
-            self.rec.start()
+            self.receiver.start()
 
     # sends all triggers
     def send_trigger(self, triggers):
@@ -124,7 +122,7 @@ class conman():
                 self.lock.release()
             except ConnectionAbortedError as e:
                 print("conman: ConnectionAbortedError")
-                self.rec.stop()
+                self.receiver.stop()
                 return e
             sleep(.1)
 
@@ -136,7 +134,7 @@ class conman():
             self.lock.release()
         except ConnectionAbortedError as e:
             print("conman: ConnectionAbortedError")
-            self.rec.stop()
+            self.receiver.stop()
             return e
 
     def bind_id(self, id, callback):
