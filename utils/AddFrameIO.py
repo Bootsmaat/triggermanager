@@ -1,8 +1,9 @@
 import pymel.core as pm
+import importlib
 import mimic_utils
 import mimic_io
-reload(mimic_utils)
-reload(mimic_io)
+importlib.reload(mimic_utils)
+importlib.reload(mimic_io)
 
 def get_robot_selection():
     """
