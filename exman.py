@@ -1,13 +1,13 @@
-import vlc 
+#import vlc 
 from time import sleep
 
 _medias = []
 _mi = 0
 
-_player = vlc.MediaPlayer ()
-_inst = _player.get_instance ()
-_vplayer = vlc.MediaPlayer ()
-_vplayer_inst = _vplayer.get_instance ()
+#_player = vlc.MediaPlayer ()
+#_inst = _player.get_instance ()
+#_vplayer = vlc.MediaPlayer ()
+#_vplayer_inst = _vplayer.get_instance ()
 
 def exec_player_cmd (mps, func):
     for mp in mps:
