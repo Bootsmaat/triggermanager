@@ -4,7 +4,7 @@ from os import path
 from pathlib import Path
 from triggers import *
 import conman as cm
-# import exman as em
+import exman as em
 from saver import save, load
 from fizwatcher import fiz_watcher
 from time import sleep
@@ -85,11 +85,11 @@ def on_load ():
 
 def on_open_playback ():
     v_files = [a.path for a in trigger_list if (Path (a.path).suffix == '.mp4') and a.enabled]
-    # em.prep_video_player (v_files[0])
+    em.prep_video_player (v_files[0])
 
 def on_stop_playback ():
-    # em.stop_video ()
-    print ("kill me")
+    em.stop_video ()
+    print ("kill me :( ")
 
 def toggle_trigger_loop (widget = None):
     global trigger_loop_enabled, cb_i
@@ -140,12 +140,12 @@ def send_config ():
     # ONLY BINDS .mp4 VID FILES TO PLAY!
     
     for a in a_files:
-        # cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
+        cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
         print ("kill me")
     
     for v in v_files:
         print ("kill me")
-        # cm.bind_id (v.id, lambda t : em.play_video (get_trigger_by_id (t).path))
+        cm.bind_id (v.id, lambda t : em.play_video (get_trigger_by_id (t).path))
     
     # let user do this with menu option
     # if (len (v_files) != 0):
