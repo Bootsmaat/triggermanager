@@ -1,191 +1,154 @@
+from fizprotocol import *
+import receiver
 import socket, sys, threading, struct
-from triggers import trigger_t
 from time import sleep
-from threading import Thread
 
-# opcodes
-OP_START    = 0x1
-OP_STOP     = 0x2
-OP_EXIT     = 0x3
-OP_GET      = 0x4
-OP_SET      = 0x5
-OP_TSET     = 0x6
-OP_TSTART   = 0x7
-OP_TSTOP    = 0x8
-OP_FD       = 0x9
-OP_TCLEAR   = 0xa
-OP_REFRESH  = 0xd
+# interval between status polls in s
+POLL_TIMEOUT = 4
 
-# trigger activation msg code
-TR_A = 0xa
 
-CONF_PORT   = 8081
-BUF_SIZE    = 32
-TIMEOUT     = 1
+# class representing connection to pisync
+# hold object receiver which asyncronally gets the response 
+class conman():
+    def __init__(
+        self,
+        conn_error_cb = None, 
+        generic_cb = None,
+        status_update_cb = None
+    ) -> None:
 
-callbacks   = {}
-sock        = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-cb_i        = 0
-trigger_cb  = lambda a: print("trigger callback not bound")
-error_cb    = lambda a: print("error callback not bound")
+        self.callbacks = {}
+        self.cb_i = 0
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.receiver = receiver.Receiver(self.on_fire_trigger)
+        
+        self.error_cb = conn_error_cb
 
-class Receiver (Thread):
-    def __init__ (self, sock):
-        Thread.__init__(self)
-        self._stop      = 0
-        self.events     = []
-        self.sock       = sock
+        self.lock = threading.Lock()
+        self.stop_signal = threading.Event()
+        self.send_signal = threading.Event()
 
-        # sock.settimeout (TIMEOUT)
+        # store callbacks to bind later
+        self.bind_error_callback(conn_error_cb)
+        self.bind_generic_callback(generic_cb)
+        self.receiver.status_update_cb = status_update_cb
 
-        self.frame = 0
-        self.focus = 0
-        self.iris  = 0
-        self.zoom  = 0
-    
-    def run (self):
-        print ('Receiver: Starting...')
-        global trigger_cb
-        while (not self.stop == 1):
-            if (not self.sock._closed):
-                try:
-                    data = self.sock.recv (1) # read packet length
-                except BaseException as e:
-                    error_cb (e)
-            else:
-                return
+    def __del__(self):
+        print("cleaning up conman")
+        self.cleanup()
 
-            if (len (data) == 0):
-                break
-            _len = data[0] - 1
-            data = self.sock.recv (_len) # read rest of packet
+    def cleanup(self):
+        # TODO maybe have receiver listen to the same stop signal
+        self.receiver.stop()
+        self.stop_signal.set()
 
-            if (data[0] == TR_A): # trigger fire message
-                tr_id = (data[1] << 8) | data[2]
-                trigger_cb (tr_id)
-            elif (data[0] == OP_GET):
-                self.frame = (data[1] << 8) | data [2]
-                self.focus = (data[3] << 8) | data [4]
-                self.iris  = (data[5] << 8) | data [6]
-                self.zoom  = (data[7] << 8) | data [8]
-            else:
-                opc = data[0]
-                add = data[1:]
-                e = (opc, add)
-                self.events.append (e)
-        print ('Receiver: Exiting...')
-
-    def pop (self):
-        if (len (self.events) != 0):
-            return self.events.pop (len (self.events) - 1)
-        else:
-            return
-
-    def stop (self):
-        self._stop = 1
-
-    # blocks until an event is added to list
-    def wait_for_event (self):
-        while (len (self.events) == 0):
-            sleep (.1)
-    
-def register_tr_cb (func = None):
-    global trigger_cb
-    if (func):
-        trigger_cb = func
-
-def register_error_cb (func = None):
-    global error_cb
-    if (func):
-        error_cb = func
-
-thr = Receiver (sock)
-
-def construct_packet (opc, **kwargs):
-    packstr = ">B B "
-    plen = 2
-    vals = [plen, opc]
-
-    if 'cat_set' in kwargs:
-        slen = len(kwargs['cat_set'])
-        plen += slen
-        packstr += (str (slen) + "s ")
-        vals.append (kwargs['cat_set'].encode())
-
-    if 'tr_id' in kwargs:
-        if not 'tr_afr' in kwargs:
-            print ("conman: incomplete arguments. tr_afr missing")
-            return
-        plen += 4       
-        packstr += "H H "
-        vals.append (kwargs['tr_id'])
-        vals.append (kwargs['tr_afr'])
-
-    vals[0] = plen
-    packer = struct.Struct (packstr)
-    data = packer.pack (*vals)
-    return data
-
-def send_opc (opc):
-    global thr
-    print ('sending opc: %s' % str(opc))
-    data = construct_packet (opc)
-    try:
-        sock.send (data)
-    except BrokenPipeError as e:
-        error_cb (e)
-        thr.stop ()
-    except ConnectionAbortedError as e:
-        error_cb (e)
-        thr.stop ()
-
-def connect (addr):
-    global sock, thr
-    if (not sock._closed):
-        sock.close ()
-
-    sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.connect ((addr, CONF_PORT))
-        thr = Receiver (sock)
-    except OSError as e:
-        print ('OSError raised')
-        raise e
-    else:
-        send_opc (OP_FD)
-        thr.start ()
-
-# sends all triggers
-def send_trigger (triggers):
-    global sock, thr
-    send_opc (OP_TCLEAR)
-    for t in triggers:
-        data = construct_packet (OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
+        # TODO fix
         try:
-            sock.send (data)
+            self.receiver.join()
+            self.status_poller.join()
+        except RuntimeError:
+            print("trying to close thread but not open yet")
+
+        self.sock.close()
+
+    def bind_trigger_callback (self, func):
+        self.receiver.trigger_cb = func
+
+    def bind_error_callback (self, func):
+        self.receiver.error_cb = func
+
+    def bind_generic_callback (self, func):
+        self.receiver.generic_event_cb = func
+
+    def send_opc(self, opc):
+        print('sending opc: %s' % str(opc))
+        data = construct_packet(opc)
+
+        try:
+            self.lock.acquire()
+            self.sock.send(data)
+            self.lock.release()
+
+        except BrokenPipeError as e:
+            print("conman: BrokenPipeError")
+            self.receiver.stop()
+            self.lock.release()
+            self.stop_signal.set()
+            self.error_cb(e)
+            raise e
+
         except ConnectionAbortedError as e:
-            error_cb (e)
-            thr.stop ()
-        sleep (.1)
+            print("conman: ConnectionAbortedError")
+            self.receiver.stop()
+            self.lock.release()
+            self.stop_signal.set()
+            self.error_cb(e)
+            # raise e
 
-def send_fiz_config (fiz_string):
-    global sock, thr
-    data = construct_packet (OP_SET, cat_set=fiz_string)
-    try:
-        sock.send (data)
-    except ConnectionAbortedError as e:
-        error_cb (e)
-        thr.stop ()
+    def connect(self, addr):
+        try:
+            self.sock.close()
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((addr, CONF_PORT))
+            self.receiver.setSocket(self.sock)
+            self.send_signal.set()
 
-def bind_id (id, callback = None):
-    global callbacks
-    if callback:
-        callbacks[id] = callback
+            def poll_status(conn, stop_signal, send_signal):
+                while(True):
+                    if (send_signal.is_set()):
+                        conn.send_opc(OP_STATUS)
 
-def on_fire_trigger (tr_id):
-    global callbacks
-    if tr_id in callbacks:
-        print ('on_fire_trigger: trigger %i fired' % tr_id)
-        callbacks[tr_id] (tr_id)
-    else:
-        print ('on_fire_trigger: key %i not bound to a callback' % tr_id)
+                    sleep(POLL_TIMEOUT)
+
+                    if (stop_signal.is_set()):
+                        return
+
+            self.stop_signal.clear()
+            self.status_poller = threading.Thread(
+                name='status_poller', 
+                target=lambda : poll_status(self, self.stop_signal, self.send_signal))
+            self.status_poller.start()
+
+        except OSError as e:
+            print('OSError raised')
+            raise e
+        else:
+            self.send_opc(OP_FD)
+            self.receiver.start()
+
+    # sends all triggers
+    def send_trigger(self, triggers):
+        self.send_opc(OP_TCLEAR)
+
+        for t in triggers:
+            data = construct_packet(OP_TSET, tr_id=t.id, tr_afr=t.activation_frame)
+            try:
+                self.lock.acquire()
+                self.sock.send(data)
+                self.lock.release()
+            except ConnectionAbortedError as e:
+                print("conman: ConnectionAbortedError")
+                self.receiver.stop()
+                return e
+            sleep(.1)
+
+    def send_fiz_config(self, fiz_string):
+        data = construct_packet(OP_SET, cat_set=fiz_string)
+        try:
+            self.lock.acquire()
+            self.sock.send(data)
+            self.lock.release()
+        except ConnectionAbortedError as e:
+            print("conman: ConnectionAbortedError")
+            self.receiver.stop()
+            return e
+
+    def bind_id(self, id, callback):
+        self.callbacks[id] = callback
+
+    def on_fire_trigger(self, tr_id):
+        if tr_id in self.callbacks:
+            print ('on_fire_trigger: trigger %i fired' % tr_id)
+            self.callbacks[tr_id] (tr_id)
+        else:
+            print ('on_fire_trigger: key %i not bound to a callback' % tr_id)
