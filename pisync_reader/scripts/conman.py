@@ -44,8 +44,9 @@ class conman():
 
         # TODO fix
         try:
-            self.receiver.join()
-            self.status_poller.join()
+            pass
+            #self.receiver.join()
+            #self.status_poller.join()
         except RuntimeError:
             print("trying to close thread but not open yet")
 

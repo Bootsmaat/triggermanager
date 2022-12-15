@@ -43,7 +43,9 @@ class Receiver (Thread):
                 except BaseException as e:
                     self.error_cb(e)
                     self.stop()
-                    raise e
+                    print ("Error on connection: {}".format(e))
+                    break
+                    #raise e
             else:
                 return
 

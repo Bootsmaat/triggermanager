@@ -10,14 +10,25 @@
 #
 
 # Import python lib
+from pickle import FRAME
 import time
 from os.path import dirname
 from os.path import basename
 from os.path import exists
 from os.path import join as pathjoin
 from pprint import pprint
+from time import sleep
+
+from PyQt5.QtCore import QRegExp
+from PyQt5.QtGui import QRegExpValidator
 
 import configparser
+
+# Import triggermanager related items
+import conman
+from config import *
+from fizwatcher import fiz_watcher
+import fizprotocol as fp
 
 # Import maya related python libs
 from maya import mel, cmds, OpenMayaUI
@@ -36,9 +47,12 @@ import maya.OpenMaya as OpenMaya
 
 # Import my related libs
 from init_ui import *
-import pisync_reader_module
-importlib.reload (pisync_reader_module)
 
+# Initialize TriggerManager related items
+cm = conman.conman()
+cf = configurator()
+trigger_loop_enabled = False
+cb_i = 0
 
 # Global variables
 debug = True
@@ -60,12 +74,43 @@ UI_GRAY_GRADE = "background-color: qlineargradient(spread:reflect, x1:0, y1:0, x
 UI_BLACK_GRADE = "background-color: qlineargradient(spread:reflect, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 30, 30, 255), stop:0.1 rgba(68, 68, 68, 255), stop:0.3 rgba(90, 90, 90, 255), stop:0.49 rgba(115, 115, 115, 255), stop:0.51 rgba(115, 115, 115, 255), stop:0.7 rgba(90, 90, 90, 255), stop:0.9 rgba(68, 68, 68, 255), stop:1 rgba(30, 30, 30, 255));color: rgb(10, 10, 10);"
 
 
+def set_current_time (value):
+    cmds.currentTime (value)
+
+class pisync_value_box ():
+    """
+    Class used to set values in the gui from the thread that connects and tracks pisync.
+    """
+    def __init__(self, gui_element, cmd=None):
+        self.gui_box = gui_element
+        self.value = -2
+        self.cmd = cmd
+
+    def set (self, value):
+        self.value = value
+        cmds.evalDeferred (self.set_value)
+        
+    def set_value (self):
+        self.gui_box.setText (str(round (self.value, 2)))
+        if self.cmd:
+            self.cmd (self.value)
+
+
+FRAMEBOX = None
+FOCUSBOX = None
+IRISBOX  = None
+ZOOMBOX  = None
+
 class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
     """
     Mainwindow GUI for KUKA live robot reader.
     """
     
     def __init__ (self, controller, parent=None):
+        global FRAMEBOX
+        global FOCUSBOX
+        global IRISBOX
+        global ZOOMBOX
         # Basic setup
         super (pisync_reader_window, self).__init__(parent)
         self.debug = False
@@ -73,50 +118,23 @@ class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
         self.current_tab = 0
         # Setup the ui window
         self.setupUi (self)
-        self.connectButton.clicked.connect(self.__connect)
-        self.activateRead.clicked.connect(self.activate_continues_read_update)
+        self.connectButton.clicked.connect(self.controller.connect)
+        self.activateRead.clicked.connect(self.controller.toggle_trigger_loop)
         self.activateRead.setChecked (False)
-        self.hostField.editingFinished.connect(self.__validatehostdata)
-        #self.writegroup = self.Modes.widget(1).children()[0]
-        #self.OvOverride_slider = SliderSet_Widget (controller._set_BM_OV_PRO, parent=self.writegroup, description="KRC Velocity override", unit="%", scale=1, value=controller._get_BM_OV_PRO (), value_min=1, value_max=25, x=7, y=82)
-        ## The select mimic robot menu
-        #self.mimicRobotsComboBox.activated.connect (self.select_robot)
-        #self.robotIKHandleMenu.activated.connect (self.__select_ik_handle)
-        ## Register callbacks for events in maya
-        #self.scene_changed_job = cmds.scriptJob(event=['PostSceneRead', self.__scene_changed], killWithScene=True)
-        #self.snapIkToFkButton.clicked.connect (self.__snap_ik_to_fk)
-        ## Hookup the ui elements to actions
-        #self.sampleReadButton.clicked.connect(self.__read)
-        #self.Modes.currentChanged.connect (self.switch_tab)
-        #self.enable_disable_tabs (False)
-        #self.clear_MemoryR2AButton.clicked.connect (self.__clear_memory_r2a)
-        #self.clear_MemoryR2AButton.setEnabled (False)
-        #self.activateWrite.clicked.connect(self.__activate_live_position)
-        #self.sampleWriteButton.clicked.connect(self.__write)
-        #self.sampleWriteButton.setEnabled (False)
-        #self.activateTCPControl.clicked.connect(self.__activate_tcp_control)
-        #self.activateTCPControl.setEnabled (False)
-        #self.newMotionpathButton.clicked.connect(self.__new_motionpath)
-        #self.motionpathComboBox.activated.connect (self.__edit_motion_path)
-        #self.setconnectionstatus ("Connect", UI_RED_GRADE, False)
-        #self.portField.editingFinished.connect(self.__validateportdata)
-        #self.emilyFileListBox.activated.connect (self.__select_emily_file)
-        #self.uploadEmilyFileButton.clicked.connect (self.__upload_emily_file)
-        #self.load_EmilyButton.clicked.connect (self.__load_emily)
-        #self.to_startEmilyButton.clicked.connect (self.__to_start_emily)
-        #self.run_EmilyButton.clicked.connect (self.__run_emily)
-        #self.unload_EmilyButton.clicked.connect (self.__unload_emily)
-        #self.label_Ready2AnimateStatus.setText ('Ready2Animate Status')
-        #self.emilyFileNameInput.editingFinished.connect (self.__set_emily_filename)
-        #self.frame.hide ()
-        #self.uploadProgressBar.hide ()
-        #self.Modes.setCurrentIndex (0)
-        #self.switch_tab (0)
+        self.hostField.editingFinished.connect(self.validatehostdata)
+        self.frameValue.setText ("-1")
+        self.focusValue.setText ("-1")
 
-    def __connect (self):
-        """
-        """
-        pass
+        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
+        self.reg_ex_pattern = "^" + self.ip_range + "(\\." + self.ip_range + ")" + "(\\." + self.ip_range + ")" + "(\\." + self.ip_range + ")$"
+        self.reg_ex = QRegExp(self.reg_ex_pattern)
+        self.input_validator = QRegExpValidator(self.reg_ex, self.hostField)
+        self.hostField.setValidator(self.input_validator)
+
+        FRAMEBOX = pisync_value_box (self.frameValue, set_current_time)
+        FOCUSBOX = pisync_value_box (self.focusValue)
+        IRISBOX  = pisync_value_box (self.irisValue)
+        ZOOMBOX  = pisync_value_box (self.zoomValue)
 
 
     def activate_continues_read_update (self):
@@ -125,12 +143,17 @@ class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
         pass
 
 
-    def __validatehostdata (self):
+    def validatehostdata (self):
         """
         """
-        pass
-
+        # Must be valid ip or hostname
+        host = self.hostField.text()
+        self.controller.set_ip_address (host)
+        #print ('Host address: {}'.format (host))
+        self.setFocus()
      
+
+
 class pisync_reader_controller ():
     """
     Controller for the pisync connection
@@ -141,7 +164,88 @@ class pisync_reader_controller ():
         Initialize the live robot connection.
         Default ini file will be used when no other parameters are passed.
         """
+        global cf
+
+        self.ip_address = cf.c['rpi_addr']
         self.mainwindow = pisync_reader_window (self, maya_window_pointer)
+        self.mainwindow.hostField.setText (self.ip_address)
+
+    def set_ip_address (self, ip_address):
+        """
+        Set ip address on user entry in host field.
+        """
+        global cf
+
+        if ip_address != self.ip_address:
+            self.ip_address = ip_address
+            cf.c['rpi_addr'] = self.ip_address
+            cf.saveConfig (cf.c)
+            self.fiz_watcher = None
+
+
+    def connect (self):
+        """
+        Connect to PiSync on the give ip address.
+        """
+        global FRAMEBOX
+        global FOCUSBOX
+        global IRISBOX
+        global ZOOMBOX
+
+        if self.mainwindow.connectButton.text () == "Connect":
+            # Connect to pisync
+            print ("Connect to {}".format (self.mainwindow.hostField.text()))
+            global cm
+
+            try:
+                cm = conman.conman(
+                    generic_cb= lambda a: print(f'{a} received'),
+                    conn_error_cb= lambda a: self.on_connection_error_event(a, "what do we want with this"),
+                    status_update_cb= lambda a: self.on_status_update(a)
+                )
+
+                cm.connect(self.connection_string)
+
+                sleep(.1)
+                self.fiz_watcher = fiz_watcher(self.connection_string, FOCUSBOX, IRISBOX, ZOOMBOX, FRAMEBOX)
+                self.fiz_watcher.start()
+
+                cm.send_fiz_config(cf.c['fiz_layout'])
+
+            except BaseException as e:
+                print ("Exception {}".format (e))
+                #raise e
+            else:
+                print ("Connected")
+                self.mainwindow.connectButton.setText ("Connected")
+                #self.mainwindow.connectButton.setStyleSheet (UI_GREEN_GRADE)
+        else:
+            # Disconnect
+            print ("Disconnect from pisync")
+            cm.cleanup()
+            self.mainwindow.connectButton.setText ("Connect")
+            #self.mainwindow.connectButton.setStyleSheet (UI_GRAY_GRADE)
+
+    def toggle_trigger_loop(self, widget = None):
+        global trigger_loop_enabled, cb_i
+
+        if trigger_loop_enabled:
+            cm.send_signal.clear()
+            cm.send_opc(fp.OP_STOP)
+        else:
+            cb_i = 0 # make sure we start with the first trigger
+            cm.send_signal.clear()
+            cm.send_opc(fp.OP_START)
+    
+        trigger_loop_enabled = not trigger_loop_enabled
+
+    def on_connection_error_event (self, error, connection_widget):
+        print ("Connection widget {} with error {}".format (connection_widget, error))
+        #connection_widget['image'] = img_icon_grey
+
+    def on_status_update(self, status):
+        print ("Connection status update {}".format (status))
+        #btn_refresh['bg'] = 'green' if status[0] else 'red'
 
 
 def start_ui ():
@@ -164,12 +268,10 @@ def start_ui ():
     live_connection_gui.mainwindow.setWindowTitle (window_name)
 
     # Restore window's previous geometry from file
-    #OpenMayaUI.MQtCore
     if exists(Geometry):
         settings_obj = QSettings(Geometry, QSettings.IniFormat)
         live_connection_gui.mainwindow.restoreGeometry(settings_obj.value("windowGeometry"))
 
-    print ("default: {}".format (default))
     global PSR
     PSR = live_connection_gui
     live_connection_gui.mainwindow.show()
@@ -182,7 +284,6 @@ def run ():
     """
     print ("Loading Live PiSync connection GUI; {}".format (__file__))
     # Perform preliminary checks
-    #import mimic_utils
     import sys
     sys.dont_write_bytecode = True  # don't write PYCs
 

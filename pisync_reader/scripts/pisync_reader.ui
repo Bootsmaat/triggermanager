@@ -26,8 +26,17 @@
     <property name="focusPolicy">
      <enum>Qt::ClickFocus</enum>
     </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
     <property name="text">
-     <string>10.20.30.40</string>
+     <string/>
+    </property>
+    <property name="placeholderText">
+     <string notr="true"/>
+    </property>
+    <property name="cursorMoveStyle">
+     <enum>Qt::VisualMoveStyle</enum>
     </property>
    </widget>
    <widget class="QLabel" name="labelHost">
@@ -61,6 +70,9 @@
     <property name="text">
      <string>Connect</string>
     </property>
+    <property name="checkable">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="activateRead">
     <property name="geometry">
@@ -87,7 +99,7 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="A1_value">
+   <widget class="QLabel" name="frameValue">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -106,7 +118,7 @@
      <string>  - 00.00</string>
     </property>
    </widget>
-   <widget class="QLabel" name="A1_value_2">
+   <widget class="QLabel" name="focusValue">
     <property name="geometry">
      <rect>
       <x>90</x>
@@ -125,7 +137,7 @@
      <string>  - 00.00</string>
     </property>
    </widget>
-   <widget class="QLabel" name="A1_value_3">
+   <widget class="QLabel" name="irisValue">
     <property name="geometry">
      <rect>
       <x>160</x>
@@ -144,7 +156,7 @@
      <string>  - 00.00</string>
     </property>
    </widget>
-   <widget class="QLabel" name="A1_value_4">
+   <widget class="QLabel" name="zoomValue">
     <property name="geometry">
      <rect>
       <x>230</x>

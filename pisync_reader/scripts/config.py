@@ -1,9 +1,11 @@
 from genericpath import exists
 import json
+from os.path import dirname
 from os.path import exists
 from tkinter import W
 
-CONFIG_PATH = 'config.json'
+FilePath = dirname (__file__)
+CONFIG_PATH = '{}/config.json'.format (FilePath)
 
 def save(file, data):
     with open(file, 'w') as wf:
@@ -44,11 +46,14 @@ class configurator():
         return c
 
     def getConfig(self):
+        global CONFIG_PATH
+        print (CONFIG_PATH)
         with open(CONFIG_PATH, 'r') as rf:
             c = json.load(rf)
             return c
 
     def saveConfig(self, config):
+        print (CONFIG_PATH)
         with open(CONFIG_PATH, 'w') as wf:
             json.dump(config, wf, indent=4)
 
