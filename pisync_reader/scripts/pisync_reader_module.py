@@ -228,7 +228,6 @@ class pisync_reader_controller ():
             cm.cleanup()
             self.mainwindow.connectButton.setText ("Connect")
             self.mainwindow.activateRead.setEnabled (False)
-            #self.mainwindow.connectButton.setStyleSheet (UI_GRAY_GRADE)
 
     def toggle_trigger_loop(self, widget = None):
         global trigger_loop_enabled, cb_i
