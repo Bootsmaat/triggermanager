@@ -55,9 +55,12 @@ class fiz_watcher (Thread):
                 print ('FIZ: %i | %i | %i' % (focus, iris, zoom))
 
                 self.string_frame.set(frame)
-                self.string_f.set(("%i (%f)" % (focus, self.mapValue(focus))))
-                self.string_i.set(("%i (%f)" % (iris, self.mapValue(iris))))
-                self.string_z.set(("%i (%f)" % (zoom, self.mapValue(zoom))))
+                self.string_f.set(self.mapValue(focus))
+                self.string_i.set(self.mapValue(iris))
+                self.string_z.set(self.mapValue(zoom))
+                #self.string_f.set(("%i (%f)" % (focus, self.mapValue(focus))))
+                #self.string_i.set(("%i (%f)" % (iris, self.mapValue(iris))))
+                #self.string_z.set(("%i (%f)" % (zoom, self.mapValue(zoom))))
 
         print ('fiz_watcher: Exiting...')
 

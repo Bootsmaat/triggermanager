@@ -88,10 +88,11 @@ class pisync_value_box ():
 
     def set (self, value):
         self.value = value
+        print ("Type of value: {} with value {}".format (type(value), value))
         cmds.evalDeferred (self.set_value)
         
     def set_value (self):
-        self.gui_box.setText (str(round (self.value, 2)))
+        self.gui_box.setText (str (self.value))
         if self.cmd:
             self.cmd (self.value)
 
@@ -118,6 +119,7 @@ class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
         self.current_tab = 0
         # Setup the ui window
         self.setupUi (self)
+        self.activateRead.setEnabled (False)
         self.connectButton.clicked.connect(self.controller.connect)
         self.activateRead.clicked.connect(self.controller.toggle_trigger_loop)
         self.activateRead.setChecked (False)
@@ -204,26 +206,28 @@ class pisync_reader_controller ():
                     status_update_cb= lambda a: self.on_status_update(a)
                 )
 
-                cm.connect(self.connection_string)
+                cm.connect(self.ip_address)
 
                 sleep(.1)
-                self.fiz_watcher = fiz_watcher(self.connection_string, FOCUSBOX, IRISBOX, ZOOMBOX, FRAMEBOX)
+                self.fiz_watcher = fiz_watcher(self.ip_address, FOCUSBOX, IRISBOX, ZOOMBOX, FRAMEBOX)
                 self.fiz_watcher.start()
 
                 cm.send_fiz_config(cf.c['fiz_layout'])
 
             except BaseException as e:
                 print ("Exception {}".format (e))
+                self.mainwindow.connectButton.setChecked (False)
                 #raise e
             else:
                 print ("Connected")
                 self.mainwindow.connectButton.setText ("Connected")
-                #self.mainwindow.connectButton.setStyleSheet (UI_GREEN_GRADE)
+                self.mainwindow.activateRead.setEnabled (True)
         else:
             # Disconnect
             print ("Disconnect from pisync")
             cm.cleanup()
             self.mainwindow.connectButton.setText ("Connect")
+            self.mainwindow.activateRead.setEnabled (False)
             #self.mainwindow.connectButton.setStyleSheet (UI_GRAY_GRADE)
 
     def toggle_trigger_loop(self, widget = None):
@@ -232,10 +236,12 @@ class pisync_reader_controller ():
         if trigger_loop_enabled:
             cm.send_signal.clear()
             cm.send_opc(fp.OP_STOP)
+            self.mainwindow.connectButton.setEnabled (True)
         else:
             cb_i = 0 # make sure we start with the first trigger
             cm.send_signal.clear()
             cm.send_opc(fp.OP_START)
+            self.mainwindow.connectButton.setEnabled (False)
     
         trigger_loop_enabled = not trigger_loop_enabled
 
