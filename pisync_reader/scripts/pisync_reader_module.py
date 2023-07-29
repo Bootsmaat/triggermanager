@@ -47,6 +47,7 @@ import maya.OpenMaya as OpenMaya
 
 # Import my related libs
 from init_ui import *
+from PySide2.QtUiTools import loadUiType
 
 # Initialize TriggerManager related items
 cm = conman.conman()
@@ -75,7 +76,9 @@ UI_BLACK_GRADE = "background-color: qlineargradient(spread:reflect, x1:0, y1:0, 
 
 
 def set_current_time (value):
-    cmds.currentTime (value)
+    global trigger_loop_enabled
+    if trigger_loop_enabled:
+        cmds.currentTime (value)
 
 class pisync_value_box ():
     """
@@ -104,7 +107,7 @@ ZOOMBOX  = None
 
 class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
     """
-    Mainwindow GUI for KUKA live robot reader.
+    Mainwindow GUI pisync reader.
     """
     
     def __init__ (self, controller, parent=None):
@@ -130,8 +133,8 @@ class pisync_reader_window (pisync_reader_UI_form, pisync_reader_UI_base):
         self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
         self.reg_ex_pattern = "^" + self.ip_range + "(\\." + self.ip_range + ")" + "(\\." + self.ip_range + ")" + "(\\." + self.ip_range + ")$"
         self.reg_ex = QRegExp(self.reg_ex_pattern)
-        self.input_validator = QRegExpValidator(self.reg_ex, self.hostField)
-        self.hostField.setValidator(self.input_validator)
+        #self.input_validator = QRegExpValidator(self.reg_ex, self.hostField)
+        #self.hostField.setValidator(self.input_validator)
 
         FRAMEBOX = pisync_value_box (self.frameValue, set_current_time)
         FOCUSBOX = pisync_value_box (self.focusValue)
