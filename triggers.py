@@ -38,6 +38,21 @@ def add_trigger ():
 
     trigger_list.append(trigger)
 
+def add_serial_trigger ():
+    global id_counter
+
+    hi = get_highest_id (trigger_list) + 1
+
+    trigger = trigger_t (
+        id                  =  hi,
+        name                = "trigger_%i" % hi,
+        path                = "No file set",
+        enabled             = 1,
+        activation_frame    = 0
+    )
+
+    trigger_list.append (trigger)
+
 def remove_trigger (id):
     global trigger_list
 
