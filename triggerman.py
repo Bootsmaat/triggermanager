@@ -1,6 +1,3 @@
-import serial
-import time
-import serial.tools.list_ports
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, font
 from os import path 
@@ -151,14 +148,6 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
         if (window):
             window.destroy()
 
-def send_serial_to_port(path):
-    words = str.split(path)
-    serialPort = words[0]
-    ser = serial.Serial(serialPort, 9600)
-    ser.write(b'H')
-    print(serialPort +  " triggered")
-    time.sleep(.5)
-
 def send_config():
 
     btn_submit['bg'] = 'green'
@@ -166,12 +155,8 @@ def send_config():
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
     a_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.wav')]
     v_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.mp4')]
-    ArduinoTriggers     = [a for a in trigger_list if ("COM" in a.path)]
     # ONLY BINDS .mp4 VID FILES TO PLAY!
-    for ar in ArduinoTriggers:
-        #send serial callback
-        cm.bind_id (ar.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
-
+    
     for a in a_files:
         cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
         print ("kill me")
@@ -300,79 +285,6 @@ def add_list_item(trigger):
 
     trigger_item_list[trigger.id] = lst_item
 
-
-def add_serial_list_item (trigger):
-    global selected_item
-
-    enabled = tk.IntVar ()
-    enabled.set (trigger.enabled)
-
-    arduinoPort = tk.StringVar()
-    #OPTIONS = serial_ports()
-    OPTIONS = serial.tools.list_ports.comports()
-    if OPTIONS.count == 0:
-        OPTIONS = ["No Arduino found"]
-
-    # root of item
-    lst_item        = tk.Frame          (frame_trigger_list)
-
-    btn_selected    = tk.Radiobutton    (lst_item, variable=selected_item, value=trigger.id)
-    lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
-    entry_name      = tk.Entry          (lst_item, fg='white', bg='red')
-    dropdown_menu = tk.OptionMenu(lst_item,arduinoPort,"No Arduino found",*OPTIONS, command=lambda a: update_trigger (trigger.id,path=arduinoPort.get()))
-
-    lbl_enabled     = tk.Label          (lst_item, text="enabled:")
-    btn_enabled     = tk.Checkbutton    (
-        lst_item,
-        variable=enabled,
-        command=lambda: update_trigger_wrapper (
-            btn_enabled,
-            trigger.id,
-            enabled=enabled.get ()
-        )
-    )
-    entry_tframe    = tk.Entry (lst_item, fg='white', bg='red')
-
-    entry_name.insert   (0, trigger.name)
-    entry_name.bind     (
-        "<Return>",
-        lambda a: update_trigger_wrapper (
-            widget=entry_name,
-            id=trigger.id,
-            name=entry_name.get ()
-            )
-        )
-    entry_name.bind (
-        "<FocusOut>",
-        lambda a: on_entry_name_leave (widget=entry_name, id=trigger.id)
-        )
-
-    entry_tframe.insert (0, str (trigger.activation_frame))
-    entry_tframe.bind   (
-        "<Return>",
-        lambda a: update_trigger_wrapper (
-            widget=entry_tframe,
-            id=trigger.id,
-            activation_frame=entry_tframe.get ()
-            )
-    )
-    entry_tframe.bind (
-        "<FocusOut>",
-        lambda a: on_entry_tframe_leave (widget=entry_tframe, id=trigger.id)
-        )
-
-    lst_item.pack       (fill=tk.X, expand=1, anchor=tk.NW)
-    btn_selected.pack   (side=tk.LEFT, padx=1, pady=1)
-    lbl_id.pack         (side=tk.LEFT, padx=1, pady=1)
-    lbl_enabled.pack    (side=tk.LEFT, padx=2, pady=1)
-    btn_enabled.pack    (side=tk.LEFT)
-    entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
-    dropdown_menu.pack   (side=tk.LEFT, padx=2, pady=1)
-    entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
-
-    trigger_item_list[trigger.id] = lst_item
-
-
 def on_entry_name_leave(widget=None, id=None):
     trigger = get_trigger_by_id(id)
     original_name = trigger.name
@@ -400,10 +312,6 @@ def remove_item():
 def add_item():
     add_trigger()
     add_list_item(trigger_list[-1])
-
-def add_serial_item ():
-    add_serial_trigger ()
-    add_serial_list_item (trigger_list[-1])
 
 # raised when conman cant send data over socket
 def on_connection_error_event (error, connection_widget):
@@ -497,7 +405,6 @@ lbl_zoom_status         = tk.Label(status_bar, textvariable=string_z)
 
 # control buttons
 btn_add               = tk.Button(root, text="add", command=add_item)
-btn_add_serial_trigger = tk.Button (root, text="add serial", command=add_serial_item)
 btn_remove            = tk.Button(root, text="remove", bg="red", command=remove_item)
 btn_submit            = tk.Button(
                                     root,
@@ -521,7 +428,6 @@ container.pack              (fill=tk.BOTH, expand=1, anchor=tk.N)
 canvas.pack                 (side=tk.LEFT, fill=tk.BOTH, expand=1)
 scrollbar.pack              (side=tk.RIGHT, fill=tk.Y)
 btn_add.pack                (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
-btn_add_serial_trigger.pack(anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_remove.pack             (anchor=tk.NW, side=tk.LEFT, fill=tk.X, pady=2, padx=2)
 btn_submit.pack             (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
 btn_shooting.pack           (anchor=tk.NW, side=tk.RIGHT, fill=tk.X, pady=2, padx=2)
