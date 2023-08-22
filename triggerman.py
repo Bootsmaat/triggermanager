@@ -1,6 +1,8 @@
+#!/bin/env python
 import serial
 import time
 import serial.tools.list_ports
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, font
 from os import path 
@@ -151,13 +153,12 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
         if (window):
             window.destroy()
 
+
 def send_serial_to_port(path):
-    words = str.split(path)
-    serialPort = words[0]
-    ser = serial.Serial(serialPort, 9600)
-    ser.write(b'H')
-    print(serialPort +  " triggered")
-    time.sleep(.5)
+    serialPort = path
+    ser = serial.Serial(serialPort, 115200)
+    print(ser.write(b'h'))
+    print("Serial trigger send to :" + serialPort )
 
 def send_config():
 
@@ -166,11 +167,20 @@ def send_config():
     enabled_triggers    = [tr for tr in trigger_list if tr.enabled]
     a_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.wav')]
     v_files             = [a for a in enabled_triggers if (Path(a.path).suffix == '.mp4')]
-    ArduinoTriggers     = [a for a in trigger_list if ("COM" in a.path)]
+    windowsSerialTriggers = [a for a in enabled_triggers if ("COM" in a.path)]  
+    linuxSerialTriggers = [a for a in enabled_triggers if ("dev/tty" in a.path) ]  
+    print("---------------")
+    for a in trigger_list:
+        print(a.path)
+    print("---------------")
     # ONLY BINDS .mp4 VID FILES TO PLAY!
-    for ar in ArduinoTriggers:
+    for arw in windowsSerialTriggers:
         #send serial callback
-        cm.bind_id (ar.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
+        cm.bind_id (arw.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
+        
+    for arl in linuxSerialTriggers:
+        #send serial callback
+        cm.bind_id (arl.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
 
     for a in a_files:
         cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
@@ -309,7 +319,7 @@ def add_serial_list_item (trigger):
 
     arduinoPort = tk.StringVar()
     #OPTIONS = serial_ports()
-    OPTIONS = serial.tools.list_ports.comports()
+    OPTIONS = [s.device for s in serial.tools.list_ports.comports()]
     if OPTIONS.count == 0:
         OPTIONS = ["No Arduino found"]
 
@@ -319,7 +329,7 @@ def add_serial_list_item (trigger):
     btn_selected    = tk.Radiobutton    (lst_item, variable=selected_item, value=trigger.id)
     lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
     entry_name      = tk.Entry          (lst_item, fg='white', bg='red')
-    dropdown_menu = tk.OptionMenu(lst_item,arduinoPort,"No Arduino found",*OPTIONS, command=lambda a: update_trigger (trigger.id,path=arduinoPort.get()))
+    dropdown_menu = tk.OptionMenu(lst_item,arduinoPort,*OPTIONS, command=lambda a: update_trigger (trigger.id,path=arduinoPort.get()))
 
     lbl_enabled     = tk.Label          (lst_item, text="enabled:")
     btn_enabled     = tk.Checkbutton    (
