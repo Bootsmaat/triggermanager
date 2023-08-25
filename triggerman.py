@@ -154,11 +154,11 @@ def connect_wrapper(window = None, error_field = None, connect_icon = None, entr
             window.destroy()
 
 
-def send_serial_to_port(path):
+def send_serial_to_port(path,trigger):
     serialPort = path
     ser = serial.Serial(serialPort, 115200)
-    print(ser.write(b'h'))
-    print("Serial trigger send to :" + serialPort )
+    print(ser.write(trigger.encode()))
+    print("Serial trigger send to :" + serialPort + "trigger char : " + trigger)
 
 def send_config():
 
@@ -176,11 +176,13 @@ def send_config():
     # ONLY BINDS .mp4 VID FILES TO PLAY!
     for arw in windowsSerialTriggers:
         #send serial callback
-        cm.bind_id (arw.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
+        cm.bind_id (arw.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path,get_trigger_by_id (t).trigger_character))
+        print("send com trigger")
         
     for arl in linuxSerialTriggers:
         #send serial callback
-        cm.bind_id (arl.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path))
+        cm.bind_id (arl.id, lambda t : send_serial_to_port (get_trigger_by_id (t).path,get_trigger_by_id (t).trigger_character))
+        print("send dev/tty trigger")
 
     for a in a_files:
         cm.bind_id (a.id, lambda t : em.play (get_trigger_by_id (t).path))
@@ -330,7 +332,7 @@ def add_serial_list_item (trigger):
     lbl_id          = tk.Label          (lst_item, text="%02i" % trigger.id)
     entry_name      = tk.Entry          (lst_item, fg='white', bg='red')
     dropdown_menu = tk.OptionMenu(lst_item,arduinoPort,*OPTIONS, command=lambda a: update_trigger (trigger.id,path=arduinoPort.get()))
-
+    entry_trigger      = tk.Entry          (lst_item)
     lbl_enabled     = tk.Label          (lst_item, text="enabled:")
     btn_enabled     = tk.Checkbutton    (
         lst_item,
@@ -342,6 +344,16 @@ def add_serial_list_item (trigger):
         )
     )
     entry_tframe    = tk.Entry (lst_item, fg='white', bg='red')
+
+    entry_trigger.insert (0,trigger.trigger_character)
+    entry_trigger.bind     (
+        "<Return>",
+        lambda a: update_trigger_wrapper (
+            widget=entry_name,
+            id=trigger.id,
+            trigger_character=entry_trigger.get()
+            )
+        )
 
     entry_name.insert   (0, trigger.name)
     entry_name.bind     (
@@ -378,6 +390,11 @@ def add_serial_list_item (trigger):
     btn_enabled.pack    (side=tk.LEFT)
     entry_name.pack     (side=tk.LEFT, padx=2, pady=1)
     dropdown_menu.pack   (side=tk.LEFT, padx=2, pady=1)
+
+
+    
+    entry_trigger.pack   (side=tk.LEFT, padx=2, pady=1)
+
     entry_tframe.pack   (side=tk.LEFT, padx=2, pady=1)
 
     trigger_item_list[trigger.id] = lst_item

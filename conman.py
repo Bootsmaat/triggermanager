@@ -42,12 +42,12 @@ class conman():
         self.receiver.stop()
         self.stop_signal.set()
 
-        # TODO fix
         try:
-            self.receiver.join()
-            self.status_poller.join()
+            self.receiver.join(2) #added a 2 second timeout so it doesn't halt quiting the application TODO: FIX THIS
+            self.status_poller.join(2)
         except RuntimeError:
             print("trying to close thread but not open yet")
+        except Exception as e: print(e)
 
         self.sock.close()
 

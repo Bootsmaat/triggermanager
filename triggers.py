@@ -8,7 +8,8 @@ trigger_t = namedtuple (
         'name',
         'path',
         'enabled',
-        'activation_frame'
+        'activation_frame',
+        'trigger_character'
     ]
 )
 
@@ -33,7 +34,8 @@ def add_trigger ():
         name                = "trigger_%i" % hi,
         path                = "No file set",
         enabled             = 1,
-        activation_frame    = 0
+        activation_frame    = 0,
+        trigger_character = 'h'
     )
 
     trigger_list.append(trigger)
@@ -48,7 +50,8 @@ def add_serial_trigger ():
         name                = "trigger_%i" % hi,
         path                = "No file set",
         enabled             = 1,
-        activation_frame    = 0
+        activation_frame    = 0,
+        trigger_character = 'h'
     )
 
     trigger_list.append (trigger)
@@ -86,5 +89,7 @@ def update_trigger (id, **kwargs):
         trigger_list[i] = trigger_list[i]._replace (enabled=kwargs['enabled'])
     if 'activation_frame' in kwargs:
         trigger_list[i] = trigger_list[i]._replace (activation_frame=kwargs['activation_frame'])
+    if 'trigger_character' in kwargs:
+        trigger_list[i] = trigger_list[i]._replace (trigger_character=kwargs['trigger_character'])
 
     print (trigger_list[i])
